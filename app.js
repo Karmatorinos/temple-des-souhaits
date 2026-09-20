@@ -58,6 +58,25 @@ let currentList = null;
 let currentRole = "home"; // 'home', 'creator', 'guest'
 let guestFilter = "all";
 
+// Encodage / Décodage de données pour partage universel sans base de données
+function encodeDataToHash(data) {
+    try {
+        const json = JSON.stringify(data);
+        return encodeURIComponent(btoa(unescape(encodeURIComponent(json))));
+    } catch(e) {
+        return "";
+    }
+}
+
+function decodeDataFromHash(hash) {
+    try {
+        const decoded = decodeURIComponent(escape(atob(decodeURIComponent(hash))));
+        return JSON.parse(decoded);
+    } catch(e) {
+        return null;
+    }
+}
+
 // Initialisation
 document.addEventListener("DOMContentLoaded", () => {
     loadLists();
@@ -70,8 +89,26 @@ function handleRouting() {
     const params = new URLSearchParams(window.location.search);
     const slug = params.get("temple") || params.get("liste");
     const mode = params.get("mode");
+    const hash = window.location.hash.replace(/^#/, "");
 
-    if (!slug || !lists[slug]) {
+    // 1. Si des données sont fournies dans le lien (ex: invité qui ouvre un lien partagé)
+    if (hash && hash.startsWith("data=")) {
+        const payload = decodeDataFromHash(hash.replace(/^data=/, ""));
+        if (payload && payload.slug) {
+            lists[payload.slug] = payload;
+            saveLists();
+            currentList = payload;
+        }
+    }
+
+    // 2. Recherche par code ou slug (en ignorant la casse et les espaces)
+    let foundSlug = null;
+    if (slug) {
+        const cleanSlug = slug.trim().toLowerCase();
+        foundSlug = Object.keys(lists).find(k => k.toLowerCase() === cleanSlug);
+    }
+
+    if (!foundSlug && !currentList) {
         currentList = null;
         currentRole = "home";
         showView("viewHome");
@@ -79,7 +116,10 @@ function handleRouting() {
         return;
     }
 
-    currentList = lists[slug];
+    if (foundSlug) {
+        currentList = lists[foundSlug];
+    }
+    
     trackHistory(currentList.slug, currentList.title, currentList.owner);
 
     const isAuthed = sessionStorage.getItem(AUTH_PREFIX + currentList.slug) === "true";
@@ -150,6 +190,9 @@ function loadLists() {
 
 function saveLists() {
     localStorage.setItem(STORAGE_LISTS, JSON.stringify(lists));
+    if (currentList) {
+        updateGuestLinks();
+    }
 }
 
 function trackHistory(slug, title, owner) {
@@ -226,27 +269,42 @@ function handleCreateList(event) {
 
 function handleFindList(event) {
     event.preventDefault();
-    const code = document.getElementById("inputListCode").value.trim();
+    let code = document.getElementById("inputListCode").value.trim();
     if (!code) return;
 
-    if (lists[code]) {
-        window.location.href = `?liste=${encodeURIComponent(code)}`;
-    } else {
-        alert("Liste introuvable pour le code '" + code + "'. Vérifiez le lien ou créez votre propre liste.");
+    // Enlever un éventuel '#' ou 'liste=' si l'utilisateur l'a collé
+    code = code.replace(/^#/, '').replace(/^(?:https?:\/\/[^?]+)?\?(?:liste|temple)=/i, '');
+
+    // 1. Recherche dans les listes locales
+    const clean = code.toLowerCase();
+    const found = Object.keys(lists).find(k => k.toLowerCase() === clean);
+
+    if (found) {
+        window.location.href = `?liste=${encodeURIComponent(found)}`;
+        return;
     }
+
+    // 2. Si le code est un lien ou un code inconnu
+    alert("Aucune liste trouvée avec le code '" + code + "'. Assurez-vous d'avoir cliqué sur le lien complet envoyé par le créateur !");
 }
 
-// Liens Invités
+// Liens Invités : intègre les données de la liste pour fonctionner sur 100% des appareils
 function updateGuestLinks() {
     if (!currentList) return;
     const base = window.location.origin + window.location.pathname;
-    const url = `${base}?liste=${encodeURIComponent(currentList.slug)}`;
+    
+    // Crée une copie propre pour les invités (sans le mot de passe du créateur !)
+    const guestData = {
+        slug: currentList.slug,
+        title: currentList.title,
+        owner: currentList.owner,
+        gifts: currentList.gifts || []
+    };
+    const hashData = encodeDataToHash(guestData);
+    const url = `${base}?liste=${encodeURIComponent(currentList.slug)}#data=${hashData}`;
 
     const input = document.getElementById("guestLinkInput");
-    const testBtn = document.getElementById("testGuestViewBtn");
-
     if (input) input.value = url;
-    if (testBtn) testBtn.href = url;
 }
 
 function copyGuestLink() {
