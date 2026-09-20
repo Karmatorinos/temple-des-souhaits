@@ -1,57 +1,51 @@
 /**
- * Temple des Souhaits - Thème Grèce Antique & Multi-Utilisateurs
- * 
- * Architecture :
- * - Chaque utilisateur peut créer son propre Temple (avec son slug, nom, mot de passe admin, et cadeaux).
- * - Les invités consultent le temple via l'URL : ?temple=slug
- * - Le créateur administre son temple via l'URL : ?temple=slug&mode=creator (sécurisé par son mot de passe)
- * - Anti-spoil absolu : Les réservations ne sont JAMAIS visibles dans l'espace créateur.
+ * Temple des Souhaits - Logique Professionnelle
+ * Support Multi-listes, Anti-spoil et interface épurée
  */
 
-// Stockage des temples
-const STORAGE_KEY_TEMPLES = "temple_des_souhaits_all_temples_v2";
-const STORAGE_KEY_RECENTS = "temple_des_souhaits_recents_v2";
-const SESSION_AUTH_PREFIX = "auth_temple_";
+const STORAGE_LISTS = "tds_lists_v3";
+const STORAGE_HISTORY = "tds_history_v3";
+const AUTH_PREFIX = "tds_auth_";
 
-// Image antique par défaut
-const DEFAULT_GIFT_IMG = "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=600&q=80";
+// Image élégante neutre par défaut
+const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?auto=format&fit=crop&w=600&q=80";
 
-// Temples initiaux par défaut
-const INITIAL_TEMPLES = {
-    "olympe-zeus": {
-        slug: "olympe-zeus",
-        title: "Le Banquet de l'Olympe",
-        owner: "Zeus",
+// Données d'exemple initiales
+const SEED_LISTS = {
+    "mariage-alex-lea": {
+        slug: "mariage-alex-lea",
+        title: "Mariage d'Alexandre & Léa",
+        owner: "Alexandre & Léa",
         password: "admin",
         createdAt: "2026-09-20T12:00:00.000Z",
         gifts: [
             {
                 id: "g_1",
-                name: "Éclair Foudroyant Forgé par les Cyclopes",
-                price: 999.00,
-                category: "Mythique",
-                url: "https://fr.wikipedia.org/wiki/Foudre_de_Zeus",
-                image: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80",
-                reservedBy: "Hermès",
-                reservedAt: "2026-09-20T14:00:00.000Z"
+                name: "Robot Pâtissier KitchenAid Artisan",
+                price: 499.00,
+                category: "Cuisine",
+                url: "https://www.kitchenaid.fr",
+                image: "https://images.unsplash.com/photo-1589733955941-5eeaf752f6dd?auto=format&fit=crop&w=600&q=80",
+                reservedBy: "Marc & Valérie",
+                reservedAt: "2026-09-20T14:30:00.000Z"
             },
             {
                 id: "g_2",
-                name: "Amphore de Nectar & Ambroisie Pure",
-                price: 120.00,
-                category: "Gastronomie Divine",
-                url: "https://fr.wikipedia.org/wiki/Ambroisie",
-                image: "https://images.unsplash.com/photo-1563227812-0ea4c22e6cc8?auto=format&fit=crop&w=600&q=80",
+                name: "Service de Table en Grès Émaillé (12 personnes)",
+                price: 180.00,
+                category: "Maison",
+                url: "https://www.ikea.com",
+                image: "https://images.unsplash.com/photo-1614707267537-b85aaf00c4b7?auto=format&fit=crop&w=600&q=80",
                 reservedBy: null,
                 reservedAt: null
             },
             {
                 id: "g_3",
-                name: "Couronne de Lauriers d'Or Massif",
-                price: 350.00,
-                category: "Ornements",
-                url: "https://fr.wikipedia.org/wiki/Couronne_triomphale",
-                image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80",
+                name: "Participation Voyage de Noces en Grèce",
+                price: 100.00,
+                category: "Voyage",
+                url: "",
+                image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80",
                 reservedBy: null,
                 reservedAt: null
             }
@@ -59,147 +53,140 @@ const INITIAL_TEMPLES = {
     }
 };
 
-// État courant
-let allTemples = {};
-let currentTemple = null;
-let currentMode = "home"; // 'home', 'creator', 'guest'
-let guestFilter = "all";  // 'all', 'available', 'reserved'
+let lists = {};
+let currentList = null;
+let currentRole = "home"; // 'home', 'creator', 'guest'
+let guestFilter = "all";
 
-// ==========================================
-// INITIALISATION
-// ==========================================
+// Initialisation
 document.addEventListener("DOMContentLoaded", () => {
-    loadAllTemples();
-    route();
-    renderRecentTemples();
+    loadLists();
+    handleRouting();
+    renderSavedLists();
 });
 
-// Navigation / Routeur basé sur les paramètres URL
-function route() {
+// Routing par URL
+function handleRouting() {
     const params = new URLSearchParams(window.location.search);
-    const templeSlug = params.get("temple");
-    const modeParam = params.get("mode");
+    const slug = params.get("temple") || params.get("liste");
+    const mode = params.get("mode");
 
-    if (!templeSlug || !allTemples[templeSlug]) {
-        currentTemple = null;
-        currentMode = "home";
+    if (!slug || !lists[slug]) {
+        currentList = null;
+        currentRole = "home";
         showView("viewHome");
-        updateNavBadge();
+        updateHeaderBadge();
         return;
     }
 
-    currentTemple = allTemples[templeSlug];
-    saveRecentTemple(currentTemple.slug, currentTemple.title, currentTemple.owner);
+    currentList = lists[slug];
+    trackHistory(currentList.slug, currentList.title, currentList.owner);
 
-    const isAuth = sessionStorage.getItem(SESSION_AUTH_PREFIX + currentTemple.slug) === "true";
+    const isAuthed = sessionStorage.getItem(AUTH_PREFIX + currentList.slug) === "true";
 
-    if (modeParam === "creator") {
-        if (isAuth) {
-            currentMode = "creator";
+    if (mode === "creator") {
+        if (isAuthed) {
+            currentRole = "creator";
             showView("viewCreator");
             renderCreatorView();
         } else {
-            // Demande le mot de passe du temple
-            openModal("modalLogin");
-            currentMode = "guest";
+            openModal("modalAuth");
+            currentRole = "guest";
             showView("viewGuest");
             renderGuestView();
         }
     } else {
-        currentMode = "guest";
+        currentRole = "guest";
         showView("viewGuest");
         renderGuestView();
     }
 
-    updateNavBadge();
-    updateShareLinks();
+    updateHeaderBadge();
+    updateGuestLinks();
 }
 
-function showView(viewId) {
-    ["viewHome", "viewCreator", "viewGuest"].forEach(id => {
-        const el = document.getElementById(id);
+function showView(id) {
+    ["viewHome", "viewCreator", "viewGuest"].forEach(v => {
+        const el = document.getElementById(v);
         if (el) el.classList.add("hidden");
     });
-    const target = document.getElementById(viewId);
+    const target = document.getElementById(id);
     if (target) target.classList.remove("hidden");
 }
 
-function updateNavBadge() {
-    const badge = document.getElementById("navStatusBadge");
+function updateHeaderBadge() {
+    const badge = document.getElementById("activeListIndicator");
     if (!badge) return;
 
-    if (currentMode === "creator") {
-        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Mode Créateur : ${escapeHtml(currentTemple.title)}`;
+    if (currentRole === "creator") {
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block mr-1.5"></span> ${escapeHtml(currentList.title)} (Propriétaire)`;
         badge.classList.remove("hidden");
-    } else if (currentMode === "guest") {
-        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> Invité : ${escapeHtml(currentTemple.title)}`;
+    } else if (currentRole === "guest") {
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mr-1.5"></span> ${escapeHtml(currentList.title)} (Invité)`;
         badge.classList.remove("hidden");
     } else {
         badge.classList.add("hidden");
     }
 }
 
-function goHome() {
+function navigateHome() {
     window.location.href = window.location.pathname;
 }
 
-// ==========================================
-// GESTION DU STOCKAGE
-// ==========================================
-function loadAllTemples() {
-    const stored = localStorage.getItem(STORAGE_KEY_TEMPLES);
+// Persistance
+function loadLists() {
+    const stored = localStorage.getItem(STORAGE_LISTS);
     if (stored) {
         try {
-            allTemples = JSON.parse(stored);
-        } catch (e) {
-            allTemples = INITIAL_TEMPLES;
+            lists = JSON.parse(stored);
+        } catch(e) {
+            lists = SEED_LISTS;
         }
     } else {
-        allTemples = INITIAL_TEMPLES;
-        saveAllTemples();
+        lists = SEED_LISTS;
+        saveLists();
     }
 }
 
-function saveAllTemples() {
-    localStorage.setItem(STORAGE_KEY_TEMPLES, JSON.stringify(allTemples));
+function saveLists() {
+    localStorage.setItem(STORAGE_LISTS, JSON.stringify(lists));
 }
 
-function saveRecentTemple(slug, title, owner) {
-    let recents = [];
-    try {
-        recents = JSON.parse(localStorage.getItem(STORAGE_KEY_RECENTS)) || [];
-    } catch(e) {}
-    recents = recents.filter(r => r.slug !== slug);
-    recents.unshift({ slug, title, owner, lastVisited: Date.now() });
-    if (recents.length > 5) recents.pop();
-    localStorage.setItem(STORAGE_KEY_RECENTS, JSON.stringify(recents));
+function trackHistory(slug, title, owner) {
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(STORAGE_HISTORY)) || []; } catch(e) {}
+    hist = hist.filter(h => h.slug !== slug);
+    hist.unshift({ slug, title, owner, time: Date.now() });
+    if (hist.length > 6) hist.pop();
+    localStorage.setItem(STORAGE_HISTORY, JSON.stringify(hist));
 }
 
-function renderRecentTemples() {
-    const container = document.getElementById("recentTemplesList");
+function renderSavedLists() {
+    const container = document.getElementById("savedListsContainer");
+    const countEl = document.getElementById("savedListsCount");
     if (!container) return;
 
-    let recents = [];
-    try {
-        recents = JSON.parse(localStorage.getItem(STORAGE_KEY_RECENTS)) || [];
-    } catch(e) {}
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(STORAGE_HISTORY)) || []; } catch(e) {}
 
-    if (recents.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-500 italic font-sans">Aucun temple récent enregistré.</p>`;
+    if (countEl) countEl.textContent = hist.length;
+
+    if (hist.length === 0) {
+        container.innerHTML = `<p class="text-xs text-stone-400 py-3 text-center">Aucune liste enregistrée récemment.</p>`;
         return;
     }
 
-    container.innerHTML = recents.map(r => `
-        <div class="flex items-center justify-between p-3 rounded-2xl bg-black/40 border border-greek-gold/20 hover:border-greek-gold/50 transition-all">
-            <div class="truncate">
-                <p class="font-cinzel text-xs font-bold text-greek-goldLight truncate">${escapeHtml(r.title)}</p>
-                <p class="text-[11px] text-slate-400">Fondé par ${escapeHtml(r.owner)} · <span class="font-mono text-[10px] text-greek-gold/70">${escapeHtml(r.slug)}</span></p>
+    container.innerHTML = hist.map(item => `
+        <div class="flex items-center justify-between p-3 rounded-xl border border-stone-200 bg-stone-50/50 hover:bg-stone-50 transition-colors">
+            <div class="truncate mr-3">
+                <p class="text-xs font-semibold text-stone-900 truncate">${escapeHtml(item.title)}</p>
+                <p class="text-[11px] text-stone-500">Par ${escapeHtml(item.owner)}</p>
             </div>
-            <div class="flex gap-2">
-                <a href="?temple=${encodeURIComponent(r.slug)}" class="px-2.5 py-1 rounded-xl bg-greek-gold/20 hover:bg-greek-gold/30 text-greek-gold text-[11px] font-cinzel font-bold">
+            <div class="flex items-center gap-1.5 shrink-0">
+                <a href="?liste=${encodeURIComponent(item.slug)}" class="px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-stone-700 text-xs font-medium hover:border-stone-400 transition-colors">
                     Invité
                 </a>
-                <a href="?temple=${encodeURIComponent(r.slug)}&mode=creator" class="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[11px] font-cinzel font-bold">
+                <a href="?liste=${encodeURIComponent(item.slug)}&mode=creator" class="px-2.5 py-1 rounded-lg bg-stone-900 text-white text-xs font-medium hover:bg-stone-800 transition-colors">
                     Gérer
                 </a>
             </div>
@@ -207,25 +194,22 @@ function renderRecentTemples() {
     `).join("");
 }
 
-// ==========================================
-// CRÉATION ET NAVIGATION ENTRE TEMPLES
-// ==========================================
-function handleCreateTemple(event) {
+// Création de Liste
+function handleCreateList(event) {
     event.preventDefault();
-    const title = document.getElementById("newTempleTitle").value.trim();
-    const owner = document.getElementById("newTempleOwner").value.trim();
-    const password = document.getElementById("newTemplePass").value.trim();
+    const title = document.getElementById("newListTitle").value.trim();
+    const owner = document.getElementById("newListOwner").value.trim();
+    const password = document.getElementById("newListPass").value.trim();
 
     if (!title || !owner || !password) return;
 
-    // Création d'un slug unique et propre (ex: anniversaire-lucas-78a)
-    const baseSlug = title.toLowerCase()
+    const base = title.toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "") || "temple";
-    const slug = `${baseSlug}-${Math.random().toString(36).substring(2, 6)}`;
+        .replace(/^-+|-+$/g, "") || "liste";
+    const slug = `${base}-${Math.random().toString(36).substring(2, 6)}`;
 
-    const newTemple = {
+    lists[slug] = {
         slug: slug,
         title: title,
         owner: owner,
@@ -234,73 +218,64 @@ function handleCreateTemple(event) {
         gifts: []
     };
 
-    allTemples[slug] = newTemple;
-    saveAllTemples();
-
-    // Authentifier automatiquement le créateur
-    sessionStorage.setItem(SESSION_AUTH_PREFIX + slug, "true");
-
-    showToast("Votre Temple a été érigé avec succès ! 🏛️");
-    window.location.href = `?temple=${encodeURIComponent(slug)}&mode=creator`;
+    saveLists();
+    sessionStorage.setItem(AUTH_PREFIX + slug, "true");
+    showToast("Votre liste a été créée !");
+    window.location.href = `?liste=${encodeURIComponent(slug)}&mode=creator`;
 }
 
-function handleJoinTempleById(event) {
+function handleFindList(event) {
     event.preventDefault();
-    const slug = document.getElementById("inputTempleSlug").value.trim();
-    if (!slug) return;
+    const code = document.getElementById("inputListCode").value.trim();
+    if (!code) return;
 
-    if (allTemples[slug]) {
-        window.location.href = `?temple=${encodeURIComponent(slug)}`;
+    if (lists[code]) {
+        window.location.href = `?liste=${encodeURIComponent(code)}`;
     } else {
-        alert("Aucun temple n'a été trouvé avec l'identifiant '" + slug + "'. Vérifiez l'orthographe ou créez-en un nouveau !");
+        alert("Liste introuvable pour le code '" + code + "'. Vérifiez le lien ou créez votre propre liste.");
     }
 }
 
+// Liens Invités
+function updateGuestLinks() {
+    if (!currentList) return;
+    const base = window.location.origin + window.location.pathname;
+    const url = `${base}?liste=${encodeURIComponent(currentList.slug)}`;
 
-// ==========================================
-// LIENS DE PARTAGE & INVITATIONS
-// ==========================================
-function updateShareLinks() {
-    if (!currentTemple) return;
-    const baseUrl = window.location.origin + window.location.pathname;
-    const guestUrl = `${baseUrl}?temple=${encodeURIComponent(currentTemple.slug)}`;
+    const input = document.getElementById("guestLinkInput");
+    const testBtn = document.getElementById("testGuestViewBtn");
 
-    const shareUrlDisplay = document.getElementById("guestShareUrl");
-    const previewBtn = document.getElementById("previewGuestBtn");
-
-    if (shareUrlDisplay) shareUrlDisplay.textContent = guestUrl;
-    if (previewBtn) previewBtn.href = guestUrl;
+    if (input) input.value = url;
+    if (testBtn) testBtn.href = url;
 }
 
-function copyGuestUrl() {
-    if (!currentTemple) return;
-    const baseUrl = window.location.origin + window.location.pathname;
-    const guestUrl = `${baseUrl}?temple=${encodeURIComponent(currentTemple.slug)}`;
-
-    navigator.clipboard.writeText(guestUrl).then(() => {
-        showToast("Lien sacré copié ! Transmettez-le à vos invités 📜");
+function copyGuestLink() {
+    const input = document.getElementById("guestLinkInput");
+    if (!input) return;
+    navigator.clipboard.writeText(input.value).then(() => {
+        showToast("Lien des invités copié !");
     }).catch(() => {
-        showToast("Lien : " + guestUrl);
+        input.select();
+        showToast("Lien sélectionné, faites CTRL+C");
     });
 }
 
-
 // ==========================================
-// 1. RENDU CRÉATEUR (ANTI-SPOIL ABSOLU)
+// RENDU CRÉATEUR (ZÉRO SPOIL)
 // ==========================================
 function renderCreatorView() {
-    if (!currentTemple) return;
+    if (!currentList) return;
 
-    document.getElementById("creatorTempleTitle").textContent = currentTemple.title;
-    document.getElementById("creatorOwnerName").textContent = currentTemple.owner;
-    document.getElementById("creatorTempleIdDisplay").textContent = `#${currentTemple.slug}`;
+    document.getElementById("creatorListTitle").textContent = currentList.title;
+    document.getElementById("creatorListOwner").textContent = currentList.owner;
+    document.getElementById("creatorListCode").textContent = `#${currentList.slug}`;
 
-    const gifts = currentTemple.gifts || [];
-    const countEl = document.getElementById("creatorGiftCount");
+    const gifts = currentList.gifts || [];
+    const countEl = document.getElementById("creatorItemCount");
     const grid = document.getElementById("creatorGiftsGrid");
     const emptyState = document.getElementById("creatorEmptyState");
 
-    countEl.textContent = `${gifts.length} souhait${gifts.length > 1 ? "s" : ""} dans votre registre`;
+    countEl.textContent = `${gifts.length} cadeau${gifts.length > 1 ? "x" : ""}`;
 
     if (gifts.length === 0) {
         grid.innerHTML = "";
@@ -310,53 +285,49 @@ function renderCreatorView() {
 
     emptyState.classList.add("hidden");
     grid.innerHTML = gifts.map(gift => {
-        const imgSrc = gift.image || DEFAULT_GIFT_IMG;
-        const priceTag = gift.price ? `${parseFloat(gift.price).toFixed(2)} €` : "Prix libre";
-        const catTag = gift.category ? `<span class="px-2.5 py-0.5 rounded-lg text-[10px] font-cinzel font-bold tracking-wider bg-greek-gold/10 text-greek-gold border border-greek-gold/30 uppercase">${escapeHtml(gift.category)}</span>` : "";
+        const imgSrc = gift.image || DEFAULT_IMAGE;
+        const price = gift.price ? `${parseFloat(gift.price).toFixed(2)} €` : "Prix libre";
+        const cat = gift.category ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-stone-100 text-stone-700 uppercase tracking-wider">${escapeHtml(gift.category)}</span>` : "";
 
         return `
-        <div class="marble-card rounded-3xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:border-greek-gold/60">
-            <!-- Image Antique -->
-            <div class="relative h-48 w-full bg-black/50 overflow-hidden group">
-                <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(gift.name)}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onerror="this.src='${DEFAULT_GIFT_IMG}'">
-                <div class="absolute top-3 right-3">
-                    <span class="px-3 py-1 rounded-full text-xs font-cinzel font-bold bg-black/80 text-greek-gold border border-greek-gold/40 shadow-lg backdrop-blur-sm">
-                        ${priceTag}
+        <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden card-shadow flex flex-col transition-all duration-200 hover:-translate-y-0.5">
+            <!-- Image -->
+            <div class="relative h-44 w-full bg-stone-100 overflow-hidden">
+                <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(gift.name)}" class="w-full h-full object-cover" onerror="this.src='${DEFAULT_IMAGE}'">
+                <div class="absolute top-2.5 right-2.5">
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white/95 text-stone-900 shadow-xs backdrop-blur-xs">
+                        ${price}
                     </span>
                 </div>
             </div>
 
-            <!-- Infos -->
-            <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
-                <div class="space-y-2">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        ${catTag}
-                    </div>
-                    <h4 class="font-cinzel text-base font-bold text-greek-goldLight leading-snug line-clamp-2">${escapeHtml(gift.name)}</h4>
+            <!-- Content -->
+            <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                <div>
+                    ${cat ? `<div class="mb-1.5">${cat}</div>` : ''}
+                    <h4 class="text-sm font-bold text-stone-900 line-clamp-2 leading-snug">${escapeHtml(gift.name)}</h4>
                 </div>
 
-                <!-- Sceau Secret Anti-Spoil -->
-                <div class="p-3 rounded-2xl bg-black/40 border border-greek-gold/20 flex items-center gap-2.5 text-xs text-slate-300">
-                    <span class="text-base text-greek-gold">🛡️</span>
-                    <div>
-                        <p class="font-cinzel font-bold text-[11px] text-greek-gold uppercase tracking-wider">Secret Divin Garanti</p>
-                        <p class="text-[10px] text-slate-400 font-sans">Réservations cachées pour préserver votre surprise totale.</p>
-                    </div>
+                <!-- Anti Spoil Tag -->
+                <div class="rounded-xl bg-stone-50 p-2.5 border border-stone-200 flex items-center gap-2 text-[11px] text-stone-600">
+                    <i class="fa-solid fa-lock text-stone-400 text-xs"></i>
+                    <span>Réservation masquée (Zéro spoil)</span>
                 </div>
 
-                <!-- Actions Créateur -->
-                <div class="pt-2 border-t border-greek-gold/15 flex items-center justify-between gap-2">
+                <!-- Controls -->
+                <div class="pt-2 border-t border-stone-100 flex items-center justify-between gap-2">
                     ${gift.url ? `
-                        <a href="${escapeHtml(gift.url)}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl border border-greek-gold/30 text-greek-gold hover:bg-greek-gold/10 text-xs font-cinzel font-semibold flex items-center gap-1.5 transition-colors">
-                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Voir le présent
+                        <a href="${escapeHtml(gift.url)}" target="_blank" rel="noopener noreferrer" class="text-xs font-semibold text-stone-700 hover:text-stone-900 flex items-center gap-1">
+                            <span>Voir l'article</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-stone-400"></i>
                         </a>
                     ` : `<div></div>`}
 
                     <div class="flex items-center gap-1">
-                        <button onclick="openGiftModal('${gift.id}')" title="Modifier l'offrande" class="p-2 rounded-xl text-slate-400 hover:text-greek-gold hover:bg-greek-gold/10 transition-colors">
+                        <button onclick="openGiftModal('${gift.id}')" title="Modifier" class="p-1.5 rounded-lg text-stone-400 hover:text-stone-800 hover:bg-stone-100">
                             <i class="fa-solid fa-pen text-xs"></i>
                         </button>
-                        <button onclick="deleteGift('${gift.id}')" title="Supprimer l'offrande" class="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors">
+                        <button onclick="deleteGift('${gift.id}')" title="Supprimer" class="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50">
                             <i class="fa-solid fa-trash text-xs"></i>
                         </button>
                     </div>
@@ -367,116 +338,108 @@ function renderCreatorView() {
     }).join("");
 }
 
-
 // ==========================================
-// 2. RENDU INVITÉ (RÉSERVATIONS & DONS)
+// RENDU INVITÉ
 // ==========================================
 function renderGuestView() {
-    if (!currentTemple) return;
+    if (!currentList) return;
 
-    document.getElementById("guestTempleTitle").textContent = currentTemple.title;
-    document.getElementById("guestOwnerName").textContent = currentTemple.owner;
+    document.getElementById("guestListTitle").textContent = currentList.title;
+    document.getElementById("guestListOwner").textContent = currentList.owner;
 
-    const gifts = currentTemple.gifts || [];
-    let filteredGifts = gifts;
+    const gifts = currentList.gifts || [];
+    let filtered = gifts;
 
     if (guestFilter === "available") {
-        filteredGifts = gifts.filter(g => !g.reservedBy);
+        filtered = gifts.filter(g => !g.reservedBy);
     } else if (guestFilter === "reserved") {
-        filteredGifts = gifts.filter(g => g.reservedBy);
+        filtered = gifts.filter(g => g.reservedBy);
     }
 
     const reservedCount = gifts.filter(g => g.reservedBy).length;
-    const availableCount = gifts.length - reservedCount;
-    document.getElementById("guestGiftCount").textContent = `${availableCount} offrande${availableCount > 1 ? "s" : ""} disponible${availableCount > 1 ? "s" : ""} · ${reservedCount} déjà promise${reservedCount > 1 ? "s" : ""}`;
+    const availCount = gifts.length - reservedCount;
+    document.getElementById("guestGiftCounter").textContent = `${availCount} disponible${availCount > 1 ? "s" : ""} · ${reservedCount} réservé${reservedCount > 1 ? "s" : ""}`;
 
     const grid = document.getElementById("guestGiftsGrid");
     const emptyState = document.getElementById("guestEmptyState");
 
-    if (filteredGifts.length === 0) {
+    if (filtered.length === 0) {
         grid.innerHTML = "";
         emptyState.classList.remove("hidden");
         return;
     }
 
     emptyState.classList.add("hidden");
-    grid.innerHTML = filteredGifts.map(gift => {
+    grid.innerHTML = filtered.map(gift => {
         const isReserved = !!gift.reservedBy;
-        const imgSrc = gift.image || DEFAULT_GIFT_IMG;
-        const priceTag = gift.price ? `${parseFloat(gift.price).toFixed(2)} €` : "Prix libre";
-        const catTag = gift.category ? `<span class="px-2.5 py-0.5 rounded-lg text-[10px] font-cinzel font-bold tracking-wider bg-greek-gold/10 text-greek-gold border border-greek-gold/30 uppercase">${escapeHtml(gift.category)}</span>` : "";
+        const imgSrc = gift.image || DEFAULT_IMAGE;
+        const price = gift.price ? `${parseFloat(gift.price).toFixed(2)} €` : "Prix libre";
+        const cat = gift.category ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-stone-100 text-stone-700 uppercase tracking-wider">${escapeHtml(gift.category)}</span>` : "";
 
         return `
-        <div class="marble-card rounded-3xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 ${isReserved ? 'border-amber-500/40 bg-amber-950/10' : 'hover:border-greek-gold/60'}">
-            <!-- Image & Statut -->
-            <div class="relative h-48 w-full bg-black/50 overflow-hidden group">
-                <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(gift.name)}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${isReserved ? 'brightness-75' : ''}" onerror="this.src='${DEFAULT_GIFT_IMG}'">
+        <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden card-shadow flex flex-col transition-all duration-200 hover:-translate-y-0.5 ${isReserved ? 'opacity-90 bg-stone-50/50' : ''}">
+            <!-- Image & Badge -->
+            <div class="relative h-44 w-full bg-stone-100 overflow-hidden">
+                <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(gift.name)}" class="w-full h-full object-cover ${isReserved ? 'grayscale-25' : ''}" onerror="this.src='${DEFAULT_IMAGE}'">
                 
-                <div class="absolute top-3 right-3">
-                    <span class="px-3 py-1 rounded-full text-xs font-cinzel font-bold bg-black/80 text-greek-gold border border-greek-gold/40 shadow-lg backdrop-blur-sm">
-                        ${priceTag}
+                <div class="absolute top-2.5 right-2.5">
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white/95 text-stone-900 shadow-xs backdrop-blur-xs">
+                        ${price}
                     </span>
                 </div>
 
-                <div class="absolute top-3 left-3">
+                <div class="absolute top-2.5 left-2.5">
                     ${isReserved ? `
-                        <span class="px-3 py-1 rounded-full text-xs font-cinzel font-bold bg-amber-600/90 text-white border border-amber-400 shadow-md flex items-center gap-1.5">
-                            <i class="fa-solid fa-lock text-[10px]"></i> Réservé
+                        <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-white shadow-xs">
+                            Réservé
                         </span>
                     ` : `
-                        <span class="px-3 py-1 rounded-full text-xs font-cinzel font-bold bg-emerald-600/90 text-white border border-emerald-400 shadow-md flex items-center gap-1.5">
-                            <i class="fa-solid fa-sparkles text-[10px]"></i> Disponible
+                        <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow-xs">
+                            Disponible
                         </span>
                     `}
                 </div>
             </div>
 
-            <!-- Contenu -->
-            <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
-                <div class="space-y-2">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        ${catTag}
-                    </div>
-                    <h4 class="font-cinzel text-base font-bold text-greek-goldLight leading-snug line-clamp-2">${escapeHtml(gift.name)}</h4>
+            <!-- Content -->
+            <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                <div>
+                    ${cat ? `<div class="mb-1.5">${cat}</div>` : ''}
+                    <h4 class="text-sm font-bold text-stone-900 line-clamp-2 leading-snug">${escapeHtml(gift.name)}</h4>
                 </div>
 
-                <!-- Statut de la promesse -->
-                <div class="p-3 rounded-2xl text-xs ${isReserved ? 'bg-amber-900/30 border border-amber-500/40 text-amber-200' : 'bg-black/40 border border-greek-gold/20 text-slate-300'}">
+                <!-- Statut Réservation -->
+                <div class="rounded-xl p-3 text-xs ${isReserved ? 'bg-amber-50/70 border border-amber-200 text-amber-900' : 'bg-stone-50 border border-stone-200 text-stone-600'}">
                     ${isReserved ? `
                         <div class="flex items-center justify-between gap-2">
                             <div>
-                                <p class="font-cinzel font-bold text-xs flex items-center gap-1.5 text-amber-300">
-                                    <i class="fa-solid fa-hand-holding-heart text-amber-400"></i> Réservé par ${escapeHtml(gift.reservedBy)}
-                                </p>
-                                <p class="text-[10px] text-slate-400 font-sans mt-0.5">Offrande promise par ce proche</p>
+                                <span class="font-semibold block">Réservé par ${escapeHtml(gift.reservedBy)}</span>
+                                <span class="text-[11px] text-amber-700/80">Pour éviter les doublons</span>
                             </div>
-                            <button onclick="cancelReservation('${gift.id}')" class="text-[10px] px-2.5 py-1 rounded-lg border border-rose-400/50 bg-rose-950/40 text-rose-300 hover:bg-rose-900/50 font-cinzel font-bold transition-colors">
+                            <button onclick="cancelReservation('${gift.id}')" class="text-[11px] px-2 py-1 rounded-lg bg-white border border-amber-200 text-amber-900 font-semibold hover:bg-amber-100 transition-colors">
                                 Annuler
                             </button>
                         </div>
                     ` : `
-                        <p class="font-cinzel font-bold text-xs text-greek-goldLight flex items-center gap-1.5">
-                            <i class="fa-solid fa-gift text-greek-gold"></i> Offrande libre !
-                        </p>
-                        <p class="text-[10px] text-slate-400 font-sans mt-0.5">Soyez le noble donateur qui offrira ce présent.</p>
+                        <span>Ce cadeau est libre pour vous !</span>
                     `}
                 </div>
 
-                <!-- Boutons Invités -->
-                <div class="pt-2 border-t border-greek-gold/15 flex items-center gap-2">
+                <!-- Actions -->
+                <div class="pt-2 border-t border-stone-100 flex items-center gap-2">
                     ${gift.url ? `
-                        <a href="${escapeHtml(gift.url)}" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2.5 rounded-2xl border border-greek-gold/40 text-greek-goldLight hover:bg-greek-gold/10 text-xs font-cinzel font-bold flex items-center gap-1.5 transition-colors flex-shrink-0" title="Aller sur la boutique en ligne">
-                            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Se procurer
+                        <a href="${escapeHtml(gift.url)}" target="_blank" rel="noopener noreferrer" class="px-3 py-2 border border-stone-200 hover:border-stone-300 rounded-xl text-xs font-semibold text-stone-700 hover:bg-stone-50 transition-colors flex-shrink-0" title="Acheter en ligne">
+                            Boutique ↗
                         </a>
                     ` : ''}
 
                     ${isReserved ? `
-                        <button disabled class="w-full py-2.5 rounded-2xl bg-black/40 border border-slate-700 text-slate-500 font-cinzel font-bold text-xs cursor-not-allowed flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-check"></i> Déjà promis
+                        <button disabled class="w-full py-2 bg-stone-100 text-stone-400 rounded-xl text-xs font-semibold cursor-not-allowed">
+                            Déjà réservé
                         </button>
                     ` : `
-                        <button onclick="openReserveModal('${gift.id}')" class="w-full py-2.5 gold-button rounded-2xl font-cinzel font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-hand-sparkles"></i> Je l'offre
+                        <button onclick="openReserveModal('${gift.id}')" class="w-full py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold transition-colors">
+                            Je le réserve
                         </button>
                     `}
                 </div>
@@ -486,213 +449,213 @@ function renderGuestView() {
     }).join("");
 }
 
-function setGuestFilter(filter) {
-    guestFilter = filter;
-    ["filterBtnAll", "filterBtnAvail", "filterBtnRes"].forEach(id => {
+function filterGuestItems(type) {
+    guestFilter = type;
+    ["filterAll", "filterAvail", "filterRes"].forEach(id => {
         const btn = document.getElementById(id);
-        btn.className = "px-3 py-1.5 rounded-xl text-slate-300 hover:text-greek-gold transition-all";
+        btn.className = "px-3 py-1 rounded-lg text-stone-600 hover:text-stone-900";
     });
 
-    if (filter === "all") document.getElementById("filterBtnAll").className = "px-3 py-1.5 rounded-xl bg-greek-gold text-black font-bold transition-all";
-    if (filter === "available") document.getElementById("filterBtnAvail").className = "px-3 py-1.5 rounded-xl bg-greek-gold text-black font-bold transition-all";
-    if (filter === "reserved") document.getElementById("filterBtnRes").className = "px-3 py-1.5 rounded-xl bg-greek-gold text-black font-bold transition-all";
+    if (type === "all") document.getElementById("filterAll").className = "px-3 py-1 rounded-lg bg-white text-stone-900 font-semibold shadow-xs";
+    if (type === "available") document.getElementById("filterAvail").className = "px-3 py-1 rounded-lg bg-white text-stone-900 font-semibold shadow-xs";
+    if (type === "reserved") document.getElementById("filterRes").className = "px-3 py-1 rounded-lg bg-white text-stone-900 font-semibold shadow-xs";
 
     renderGuestView();
 }
 
 
-// ==========================================
-// MODALS & ACTIONS
-// ==========================================
+// Modals Helper
 function openModal(id) {
-    const m = document.getElementById(id);
-    if (m) m.classList.remove("hidden");
+    const el = document.getElementById(id);
+    if (el) el.classList.remove("hidden");
 }
-
 function closeModal(id) {
-    const m = document.getElementById(id);
-    if (m) m.classList.add("hidden");
+    const el = document.getElementById(id);
+    if (el) el.classList.add("hidden");
 }
 
-// Connexion au Temple (Mot de passe)
-function handleLoginSubmit(event) {
+// Mot de passe Propriétaire
+function promptCreatorAuth() {
+    openModal("modalAuth");
+}
+
+function handleAuthSubmit(event) {
     event.preventDefault();
-    if (!currentTemple) return;
+    if (!currentList) return;
 
-    const pass = document.getElementById("modalLoginPass").value.trim();
-    const errorEl = document.getElementById("modalLoginError");
+    const val = document.getElementById("authPasswordInput").value.trim();
+    const err = document.getElementById("authErrorMsg");
 
-    if (pass === currentTemple.password) {
-        sessionStorage.setItem(SESSION_AUTH_PREFIX + currentTemple.slug, "true");
-        closeModal("modalLogin");
-        currentMode = "creator";
+    if (val === currentList.password) {
+        sessionStorage.setItem(AUTH_PREFIX + currentList.slug, "true");
+        closeModal("modalAuth");
+        currentRole = "creator";
         showView("viewCreator");
-        updateNavBadge();
+        updateHeaderBadge();
         renderCreatorView();
-        showToast("Bienvenue sur l'Autel du Temple ! 🏛️");
+        showToast("Connexion réussie !");
     } else {
-        errorEl.classList.remove("hidden");
+        err.classList.remove("hidden");
     }
 }
 
-// Gestion des Cadeaux / Souhaits
-function openGiftModal(giftId = null) {
-    if (!currentTemple) return;
-    const title = document.getElementById("modalGiftTitle");
-    const editId = document.getElementById("giftEditId");
-    const name = document.getElementById("giftName");
-    const price = document.getElementById("giftPrice");
-    const cat = document.getElementById("giftCategory");
-    const url = document.getElementById("giftUrl");
-    const img = document.getElementById("giftImage");
+// Ajout / Modification de Cadeau
+function openGiftModal(id = null) {
+    if (!currentList) return;
+    const title = document.getElementById("modalGiftHeading");
+    const editId = document.getElementById("editGiftId");
+    const name = document.getElementById("inputGiftName");
+    const price = document.getElementById("inputGiftPrice");
+    const cat = document.getElementById("inputGiftCategory");
+    const url = document.getElementById("inputGiftUrl");
+    const img = document.getElementById("inputGiftImg");
 
-    if (giftId) {
-        const item = (currentTemple.gifts || []).find(g => g.id === giftId);
+    if (id) {
+        const item = (currentList.gifts || []).find(g => g.id === id);
         if (!item) return;
-        title.innerHTML = `<span>🏺</span> Modifier l'Offrande`;
+        title.textContent = "Modifier le cadeau";
         editId.value = item.id;
         name.value = item.name || "";
         price.value = item.price || "";
         cat.value = item.category || "";
         url.value = item.url || "";
         img.value = item.image || "";
-        previewGiftImg(item.image);
+        previewImage(item.image);
     } else {
-        title.innerHTML = `<span>🏺</span> Inscrire une Offrande`;
+        title.textContent = "Ajouter un cadeau";
         editId.value = "";
         name.value = "";
         price.value = "";
         cat.value = "";
         url.value = "";
         img.value = "";
-        previewGiftImg("");
+        previewImage("");
     }
 
     openModal("modalGift");
 }
 
-function previewGiftImg(url) {
-    const container = document.getElementById("giftImgPreviewContainer");
-    const preview = document.getElementById("giftImgPreview");
+function previewImage(url) {
+    const wrapper = document.getElementById("imgPreviewWrapper");
+    const img = document.getElementById("imgPreview");
     if (url && url.startsWith("http")) {
-        preview.src = url;
-        container.classList.remove("hidden");
+        img.src = url;
+        wrapper.classList.remove("hidden");
     } else {
-        container.classList.add("hidden");
+        wrapper.classList.add("hidden");
     }
 }
 
 function handleSaveGift(event) {
     event.preventDefault();
-    if (!currentTemple) return;
+    if (!currentList) return;
 
-    const editId = document.getElementById("giftEditId").value;
-    const name = document.getElementById("giftName").value.trim();
-    const price = document.getElementById("giftPrice").value;
-    const cat = document.getElementById("giftCategory").value.trim();
-    const url = document.getElementById("giftUrl").value.trim();
-    const img = document.getElementById("giftImage").value.trim();
+    const editId = document.getElementById("editGiftId").value;
+    const name = document.getElementById("inputGiftName").value.trim();
+    const price = document.getElementById("inputGiftPrice").value;
+    const cat = document.getElementById("inputGiftCategory").value.trim();
+    const url = document.getElementById("inputGiftUrl").value.trim();
+    const img = document.getElementById("inputGiftImg").value.trim();
 
     if (!name) return;
 
-    if (!currentTemple.gifts) currentTemple.gifts = [];
+    if (!currentList.gifts) currentList.gifts = [];
 
     if (editId) {
-        const index = currentTemple.gifts.findIndex(g => g.id === editId);
-        if (index !== -1) {
-            currentTemple.gifts[index].name = name;
-            currentTemple.gifts[index].price = price ? parseFloat(price) : null;
-            currentTemple.gifts[index].category = cat;
-            currentTemple.gifts[index].url = url;
-            currentTemple.gifts[index].image = img || currentTemple.gifts[index].image;
-            showToast("Offrande renouvelée dans le temple ! ✨");
+        const idx = currentList.gifts.findIndex(g => g.id === editId);
+        if (idx !== -1) {
+            currentList.gifts[idx].name = name;
+            currentList.gifts[idx].price = price ? parseFloat(price) : null;
+            currentList.gifts[idx].category = cat;
+            currentList.gifts[idx].url = url;
+            currentList.gifts[idx].image = img || currentList.gifts[idx].image;
+            showToast("Cadeau mis à jour !");
         }
     } else {
-        const newGift = {
+        currentList.gifts.unshift({
             id: "g_" + Date.now(),
             name: name,
             price: price ? parseFloat(price) : null,
-            category: cat || "Offrande",
+            category: cat || "Divers",
             url: url,
-            image: img || DEFAULT_GIFT_IMG,
+            image: img || DEFAULT_IMAGE,
             reservedBy: null,
             reservedAt: null
-        };
-        currentTemple.gifts.unshift(newGift);
-        showToast("Nouveau vœu gravé sur le marbre sacré ! 🏺");
+        });
+        showToast("Cadeau ajouté à votre liste !");
     }
 
-    allTemples[currentTemple.slug] = currentTemple;
-    saveAllTemples();
+    lists[currentList.slug] = currentList;
+    saveLists();
     closeModal("modalGift");
     renderCreatorView();
 }
 
-function deleteGift(giftId) {
-    if (!currentTemple) return;
-    const item = (currentTemple.gifts || []).find(g => g.id === giftId);
+function deleteGift(id) {
+    if (!currentList) return;
+    const item = (currentList.gifts || []).find(g => g.id === id);
     if (!item) return;
 
-    if (confirm(`Effacer à jamais l'offrande "${item.name}" du marbre de votre temple ?`)) {
-        currentTemple.gifts = currentTemple.gifts.filter(g => g.id !== giftId);
-        allTemples[currentTemple.slug] = currentTemple;
-        saveAllTemples();
+    if (confirm(`Supprimer "${item.name}" de votre liste ?`)) {
+        currentList.gifts = currentList.gifts.filter(g => g.id !== id);
+        lists[currentList.slug] = currentList;
+        saveLists();
         renderCreatorView();
-        showToast("Offrande retirée du registre.");
+        showToast("Cadeau supprimé.");
     }
 }
 
-// Réservation Invités
-function openReserveModal(giftId) {
-    if (!currentTemple) return;
-    const item = (currentTemple.gifts || []).find(g => g.id === giftId);
+// Réservation
+function openReserveModal(id) {
+    if (!currentList) return;
+    const item = (currentList.gifts || []).find(g => g.id === id);
     if (!item) return;
 
-    document.getElementById("reserveGiftId").value = item.id;
-    document.getElementById("reserveGiftName").textContent = item.name;
-    document.getElementById("reserveGuestName").value = "";
+    document.getElementById("reserveItemId").value = item.id;
+    document.getElementById("reserveItemName").textContent = item.name;
+    document.getElementById("reserveNameInput").value = "";
     openModal("modalReserve");
 }
 
-function handleConfirmReservation(event) {
+function handleConfirmReserve(event) {
     event.preventDefault();
-    if (!currentTemple) return;
+    if (!currentList) return;
 
-    const giftId = document.getElementById("reserveGiftId").value;
-    const guestName = document.getElementById("reserveGuestName").value.trim();
-    if (!guestName) return;
+    const id = document.getElementById("reserveItemId").value;
+    const name = document.getElementById("reserveNameInput").value.trim();
+    if (!name) return;
 
-    const gift = (currentTemple.gifts || []).find(g => g.id === giftId);
+    const gift = (currentList.gifts || []).find(g => g.id === id);
     if (gift) {
-        gift.reservedBy = guestName;
+        gift.reservedBy = name;
         gift.reservedAt = new Date().toISOString();
-        allTemples[currentTemple.slug] = currentTemple;
-        saveAllTemples();
+        lists[currentList.slug] = currentList;
+        saveLists();
         closeModal("modalReserve");
         renderGuestView();
-        showToast(`Bénédiction à vous, noble ${guestName} ! Présent réservé 🌿`);
+        showToast(`Cadeau réservé par ${name} !`);
     }
 }
 
-function cancelReservation(giftId) {
-    if (!currentTemple) return;
-    const gift = (currentTemple.gifts || []).find(g => g.id === giftId);
+function cancelReservation(id) {
+    if (!currentList) return;
+    const gift = (currentList.gifts || []).find(g => g.id === id);
     if (!gift) return;
 
-    if (confirm(`Rompre votre promesse d'offrande pour "${gift.name}" ? Le souhait redeviendra disponible pour les autres invités.`)) {
+    if (confirm(`Annuler la réservation pour "${gift.name}" ?`)) {
         gift.reservedBy = null;
         gift.reservedAt = null;
-        allTemples[currentTemple.slug] = currentTemple;
-        saveAllTemples();
+        lists[currentList.slug] = currentList;
+        saveLists();
         renderGuestView();
-        showToast("La réservation a été levée.");
+        showToast("Réservation annulée.");
     }
 }
 
 // Utilitaires
-function escapeHtml(text) {
-    if (!text) return "";
-    return text.toString()
+function escapeHtml(str) {
+    if (!str) return "";
+    return str.toString()
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -700,12 +663,10 @@ function escapeHtml(text) {
         .replace(/'/g, "&#039;");
 }
 
-function showToast(message) {
+function showToast(msg) {
     const toast = document.getElementById("toast");
-    const msg = document.getElementById("toastMsg");
-    msg.textContent = message;
-    toast.classList.remove("translate-y-24", "opacity-0");
-    setTimeout(() => {
-        toast.classList.add("translate-y-24", "opacity-0");
-    }, 3500);
+    const label = document.getElementById("toastMsg");
+    label.textContent = msg;
+    toast.classList.remove("translate-y-20", "opacity-0");
+    setTimeout(() => toast.classList.add("translate-y-20", "opacity-0"), 3000);
 }
