@@ -520,7 +520,7 @@ function openGiftModal(id = null) {
         cat.value = item.category || "";
         url.value = item.url || "";
         img.value = item.image || "";
-        previewImage(item.image);
+        displayScrapedImage(item.image);
     } else {
         title.textContent = "Ajouter un cadeau";
         editId.value = "";
@@ -529,21 +529,122 @@ function openGiftModal(id = null) {
         cat.value = "";
         url.value = "";
         img.value = "";
-        previewImage("");
+        displayScrapedImage("");
     }
 
     openModal("modalGift");
 }
 
-function previewImage(url) {
-    const wrapper = document.getElementById("imgPreviewWrapper");
+function displayScrapedImage(url) {
     const img = document.getElementById("imgPreview");
-    if (url && url.startsWith("http")) {
+    const placeholder = document.getElementById("imgPlaceholder");
+    const hiddenInput = document.getElementById("inputGiftImg");
+
+    if (url && (url.startsWith("http") || url.startsWith("//"))) {
         img.src = url;
-        wrapper.classList.remove("hidden");
+        img.classList.remove("hidden");
+        placeholder.classList.add("hidden");
+        hiddenInput.value = url;
     } else {
-        wrapper.classList.add("hidden");
+        img.classList.add("hidden");
+        placeholder.classList.remove("hidden");
+        hiddenInput.value = "";
     }
+}
+
+// SCRAPER MULTI-SOURCES : Contourne les protections anti-scraping
+async function autoFetchProductFromUrl(rawUrl) {
+    if (!rawUrl || !rawUrl.startsWith("http")) return;
+
+    const spinner = document.getElementById("fetchBtnSpinner");
+    const text = document.getElementById("fetchBtnText");
+    const nameInput = document.getElementById("inputGiftName");
+    const priceInput = document.getElementById("inputGiftPrice");
+    const catInput = document.getElementById("inputGiftCategory");
+
+    spinner.classList.remove("hidden");
+    text.textContent = "Extraction...";
+
+    let foundImage = null;
+    let foundTitle = null;
+    let foundPrice = null;
+
+    // 1. Spécifique Amazon : extraction directe de l'ASIN pour obtenir la photo officielle HD sans blocage
+    const amazonAsinMatch = rawUrl.match(/\/([A-Z0-9]{10})(?:[/?]|$)/i);
+    if (rawUrl.includes("amazon.") && amazonAsinMatch) {
+        const asin = amazonAsinMatch[1];
+        // CDN officiel Amazon images directes
+        foundImage = `https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_.jpg`;
+    }
+
+    // 2. Moteur 1 : Proxy Métadonnées enrichies (OpenGraph / Twitter Cards)
+    if (!foundImage || !foundTitle) {
+        try {
+            const encoded = encodeURIComponent(rawUrl);
+            const res = await fetch(`https://api.microlink.io?url=${encoded}`);
+            const data = await res.json();
+            if (data && data.data) {
+                if (!foundImage && data.data.image && data.data.image.url) {
+                    foundImage = data.data.image.url;
+                }
+                if (!foundTitle && data.data.title) {
+                    foundTitle = data.data.title;
+                }
+            }
+        } catch (e) {
+            console.log("Moteur 1 indisponible, passage au moteur 2");
+        }
+    }
+
+    // 3. Moteur 2 : Fallback CORS Proxy pour analyser les balises og:image et ld+json
+    if (!foundImage) {
+        try {
+            const proxyRes = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rawUrl)}`);
+            const proxyData = await proxyRes.json();
+            if (proxyData && proxyData.contents) {
+                const doc = new DOMParser().parseFromString(proxyData.contents, "text/html");
+                const ogImg = doc.querySelector('meta[property="og:image"]')?.content ||
+                              doc.querySelector('meta[name="twitter:image"]')?.content ||
+                              doc.querySelector('link[rel="image_src"]')?.href;
+                if (ogImg) foundImage = ogImg;
+
+                if (!foundTitle) {
+                    const ogTitle = doc.querySelector('meta[property="og:title"]')?.content || doc.title;
+                    if (ogTitle) foundTitle = ogTitle;
+                }
+            }
+        } catch (e) {
+            console.log("Moteur 2 indisponible");
+        }
+    }
+
+    // 4. Moteur 3 : Fallback Image par domaine ou aperçu web
+    if (!foundImage) {
+        // Capture d'écran instantanée du produit par proxy de rendu
+        foundImage = `https://image.thum.io/get/width/600/crop/600/${rawUrl}`;
+    }
+
+    // Application dans le formulaire
+    if (foundImage) {
+        displayScrapedImage(foundImage);
+    }
+    if (foundTitle && !nameInput.value) {
+        // Nettoyage du titre (enlève les suffixes type " - Fnac", " : Amazon.fr", etc.)
+        let cleanTitle = foundTitle.split(/[-–|:]/)[0].trim();
+        nameInput.value = cleanTitle || foundTitle;
+    }
+
+    // Détection automatique de catégorie d'après l'URL
+    if (!catInput.value) {
+        if (/livre|book|fnac/i.test(rawUrl)) catInput.value = "Livre & Culture";
+        else if (/jeu|game|playstation|nintendo|xbox/i.test(rawUrl)) catInput.value = "Jeux & High-Tech";
+        else if (/ikea|maison|deco/i.test(rawUrl)) catInput.value = "Maison & Déco";
+        else if (/vetement|mode|zara|nike|adidas/i.test(rawUrl)) catInput.value = "Mode";
+    }
+
+    spinner.classList.add("hidden");
+    text.textContent = "Extraire";
+    showToast(foundImage ? "Photo et informations récupérées avec succès !" : "Lien enregistré !");
 }
 
 function handleSaveGift(event) {
