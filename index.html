@@ -1,37 +1,41 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temple des Souhaits 🏛️ Offrandes & Vœux de l'Olympe</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Google Fonts Mythologiques : Cinzel (Titres grecs) & Medieval/Philosopher -->
+    <title>Temple des Souhaits · Listes de Cadeaux Secrètes</title>
+    
+    <!-- Fonts Premium : Plus Jakarta Sans (UI Moderne) + Cinzel (Touche Mythologique Grecque Subtile) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Cinzel+Decorative:wght@700&family=Philosopher:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        cinzel: ['Cinzel', 'serif'],
-                        cinzelDeco: ['"Cinzel Decorative"', 'serif'],
-                        sans: ['Philosopher', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                        serif: ['Cinzel', 'serif']
                     },
                     colors: {
-                        greek: {
-                            gold: '#D4AF37',
-                            goldLight: '#F5E79D',
-                            goldDark: '#997A15',
-                            bronze: '#8C6239',
-                            marble: '#FDFBF7',
-                            marbleDark: '#E8E3D9',
-                            night: '#0B0F19',
-                            aegean: '#1E3A8A',
-                            terracotta: '#C85A32'
+                        stone: {
+                            50: '#FAF9F6',
+                            100: '#F5F3EF',
+                            200: '#EBE7DF',
+                            300: '#DBD4C5',
+                            800: '#262420',
+                            900: '#181715',
+                            950: '#11100E'
+                        },
+                        amber: {
+                            gold: '#C59B27',
+                            goldLight: '#E5BF55',
+                            goldDark: '#947012'
                         }
                     }
                 }
@@ -39,369 +43,406 @@
         }
     </script>
     <style>
-        body {
-            background-color: #0d1322;
-            background-image: 
-                radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.15) 0%, transparent 70%),
-                radial-gradient(circle at 10% 30%, rgba(30, 58, 138, 0.25) 0%, transparent 50%),
-                radial-gradient(circle at 90% 80%, rgba(200, 90, 50, 0.15) 0%, transparent 50%);
-            color: #E8E3D9;
+        /* Grille subtile style plan architectural de temple */
+        .bg-temple-grid {
+            background-color: #FAF9F6;
+            background-image: radial-gradient(#E5DFD3 0.75px, transparent 0.75px);
+            background-size: 20px 20px;
         }
 
-        /* Frise grecque (Méandre géométrique) */
-        .meander-border {
-            background-image: repeating-linear-gradient(90deg, 
-                #D4AF37 0px, #D4AF37 4px,
-                transparent 4px, transparent 8px,
-                #D4AF37 8px, #D4AF37 14px,
-                transparent 14px, transparent 18px);
-            height: 3px;
-            opacity: 0.7;
+        /* Liseré discret d'inspiration grecque */
+        .greek-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, #DBD4C5 20%, #C59B27 50%, #DBD4C5 80%, transparent 100%);
         }
 
-        /* Aspect marbre antique */
-        .marble-card {
-            background: linear-gradient(135deg, rgba(23, 31, 48, 0.95), rgba(13, 19, 34, 0.98));
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(212, 175, 55, 0.08);
-            position: relative;
+        .card-shadow {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 10px 24px -8px rgba(0, 0, 0, 0.04);
         }
-
-        .marble-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #D4AF37, transparent);
-        }
-
-        .gold-glow {
-            text-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
-        }
-
-        .gold-gradient-text {
-            background: linear-gradient(135deg, #FFF6D1 0%, #D4AF37 50%, #AA8010 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .gold-button {
-            background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%);
-            color: #0B0F19;
-            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.35);
-            transition: all 0.3s ease;
-        }
-        .gold-button:hover {
-            background: linear-gradient(135deg, #F5E79D 0%, #D4AF37 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.55);
-        }
-
-        /* Colonnes doriques stylisées */
-        .pillar {
-            background: repeating-linear-gradient(90deg, 
-                rgba(212, 175, 55, 0.1) 0px, 
-                rgba(212, 175, 55, 0.1) 6px, 
-                transparent 6px, 
-                transparent 14px);
+        .card-shadow:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 16px 32px -10px rgba(197, 155, 39, 0.12);
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans selection:bg-greek-gold selection:text-black">
+<body class="bg-temple-grid text-stone-900 font-sans min-h-full flex flex-col antialiased selection:bg-amber-gold selection:text-white">
 
-    <!-- Bannière de Frise Grecque -->
-    <div class="meander-border"></div>
+    <!-- Top Accent Bar -->
+    <div class="h-1 w-full bg-gradient-to-r from-amber-goldDark via-amber-gold to-amber-goldLight"></div>
 
     <!-- Navigation Header -->
-    <header class="bg-black/60 border-b border-greek-gold/20 backdrop-blur-md sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-            <!-- Logo & Titre Antique -->
-            <div class="flex items-center gap-3 cursor-pointer" onclick="goHome()">
-                <div class="w-11 h-11 rounded-full border-2 border-greek-gold flex items-center justify-center bg-greek-night/80 text-greek-gold text-2xl shadow-lg shadow-greek-gold/20">
-                    🏛️
+    <header class="bg-white/90 backdrop-blur-md border-b border-stone-200 sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between py-3.5">
+            <!-- Brand -->
+            <a href="javascript:void(0)" onclick="navigateHome()" class="flex items-center gap-3.5 group">
+                <div class="w-10 h-10 rounded-xl bg-stone-900 flex items-center justify-center text-amber-gold border border-amber-gold/30 shadow-sm transition-transform duration-200 group-hover:scale-105">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <!-- Colonne & Fronton stylisé -->
+                        <path d="M12 2L2 7v2h20V7L12 2zm-8 8v10h3V10H4zm6 0v10h4V10h-4zm7 0v10h3V10h-3zM2 21v2h20v-2H2z"/>
+                    </svg>
                 </div>
                 <div>
-                    <h1 class="font-cinzelDeco text-lg sm:text-2xl font-bold tracking-widest gold-gradient-text">
-                        TEMPLE DES SOUHAITS
-                    </h1>
-                    <p class="text-[11px] uppercase tracking-[0.2em] text-greek-goldLight/70 font-cinzel">Sanctuaire des Offrandes Sacrées</p>
+                    <span class="font-serif text-base sm:text-lg font-bold tracking-wider text-stone-900 block leading-tight">TEMPLE DES SOUHAITS</span>
+                    <span class="text-[11px] text-stone-500 font-medium">Listes de souhaits élégantes sans spoil</span>
                 </div>
-            </div>
+            </a>
 
-            <!-- Actions Header -->
+            <!-- Right Controls -->
             <div class="flex items-center gap-3">
-                <div id="navStatusBadge" class="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full border border-greek-gold/30 bg-greek-gold/10 text-greek-goldLight text-xs font-cinzel">
+                <div id="activeListIndicator" class="hidden text-xs font-semibold px-3 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
                     <!-- Dynamic state -->
                 </div>
-                <button onclick="goHome()" class="px-3 sm:px-4 py-2 rounded-xl border border-greek-gold/40 text-greek-goldLight hover:bg-greek-gold/10 text-xs font-cinzel tracking-wider transition-all flex items-center gap-1.5">
-                    <i class="fa-solid fa-compass"></i>
-                    <span>Changer de Temple</span>
+                <button onclick="navigateHome()" class="text-xs font-medium px-3.5 py-2 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100 transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-layer-group text-[11px] text-stone-400"></i>
+                    <span>Toutes les listes</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Contenu Principal -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full">
+    <!-- Main Workspace -->
+    <main class="flex-grow max-w-6xl mx-auto px-4 sm:px-6 py-10 w-full">
 
-        <!-- ========================================================== -->
-        <!-- 1. VUE ACCUEIL : CRÉER OU REJOINDRE UN TEMPLE PERSONNEL     -->
-        <!-- ========================================================== -->
+        <!-- ======================================================== -->
+        <!-- VUE 1 : ACCUEIL PRO (CRÉER OU REJOINDRE UNE LISTE)       -->
+        <!-- ======================================================== -->
         <section id="viewHome" class="space-y-12">
-            <!-- Hero Antique -->
-            <div class="text-center max-w-3xl mx-auto space-y-4 pt-4">
-                <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-greek-gold/40 bg-greek-gold/10 text-greek-gold text-xs font-cinzel uppercase tracking-widest">
-                    ⚡ Sous la Bénédiction des Dieux
+            <!-- Hero Header -->
+            <div class="text-center max-w-2xl mx-auto space-y-3 pt-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200/80 text-amber-900 text-xs font-semibold tracking-wide">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-gold"></span>
+                    Gestionnaire de Listes Partagées
                 </div>
-                <h2 class="font-cinzel text-3xl sm:text-5xl font-extrabold tracking-tight gold-gradient-text">
-                    Chaque Mortel son Temple,<br>Chaque Temple ses Souhaits
-                </h2>
-                <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
-                    Créez votre propre sanctuaire de cadeaux unique, ajoutez vos souhaits sacrés et transmettez le parchemin secret à vos proches. Les dieux veillent : la surprise restera impénétrable au créateur !
+                <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-stone-900">
+                    Créez votre liste de cadeaux.<br>
+                    <span class="text-amber-gold">Vos invités réservent en secret.</span>
+                </h1>
+                <p class="text-stone-600 text-sm sm:text-base leading-relaxed">
+                    Chaque personne peut créer sa propre liste avec mot de passe. Les invités réservent sans inscription, et le créateur ne voit rien pour préserver la surprise.
                 </p>
             </div>
 
-            <!-- Choix : Bâtir son temple OU Consulter un temple -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <!-- Double Card : Créer OU Accéder -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
                 
-                <!-- CARTE 1 : BÂTIR UN NOUVEAU TEMPLE (CRÉATEUR) -->
-                <div class="marble-card rounded-3xl p-8 flex flex-col justify-between space-y-6">
-                    <div class="space-y-4">
-                        <div class="w-14 h-14 rounded-2xl border border-greek-gold/50 bg-greek-gold/10 flex items-center justify-center text-3xl text-greek-gold">
-                            📜
+                <!-- Card Gauche : Créer une Liste (7 cols) -->
+                <div class="md:col-span-7 bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 card-shadow space-y-6">
+                    <div>
+                        <div class="flex items-center gap-2.5 text-stone-900 font-semibold text-base mb-1">
+                            <i class="fa-regular fa-calendar-plus text-amber-gold"></i>
+                            <span>Créer une nouvelle liste</span>
                         </div>
-                        <h3 class="font-cinzel text-2xl font-bold text-greek-goldLight">Bâtir mon Temple</h3>
-                        <p class="text-xs text-slate-300 leading-relaxed">
-                            Donnez un nom à votre célébration (Anniversaire, Mariage, Noël...), choisissez votre mot de passe secret et commencez à répertorier vos souhaits.
-                        </p>
+                        <p class="text-xs text-stone-500">Remplissez ces 3 champs pour obtenir votre espace et votre lien invités.</p>
                     </div>
 
-                    <form onsubmit="handleCreateTemple(event)" class="space-y-4 pt-2">
+                    <form onsubmit="handleCreateList(event)" class="space-y-4">
                         <div>
-                            <label class="block font-cinzel text-xs text-greek-gold uppercase tracking-wider mb-1.5">Nom du Temple / Célébration *</label>
-                            <input type="text" id="newTempleTitle" placeholder="Ex: Anniversaire d'Hélène, Noël de Thomas..." class="w-full px-4 py-3 bg-black/40 border border-greek-gold/30 rounded-2xl text-sm text-white focus:border-greek-gold focus:ring-1 focus:ring-greek-gold outline-none transition-all" required>
-                        </div>
-                        <div>
-                            <label class="block font-cinzel text-xs text-greek-gold uppercase tracking-wider mb-1.5">Nom du Vénérable Créateur *</label>
-                            <input type="text" id="newTempleOwner" placeholder="Ex: Hélène" class="w-full px-4 py-3 bg-black/40 border border-greek-gold/30 rounded-2xl text-sm text-white focus:border-greek-gold focus:ring-1 focus:ring-greek-gold outline-none transition-all" required>
-                        </div>
-                        <div>
-                            <label class="block font-cinzel text-xs text-greek-gold uppercase tracking-wider mb-1.5">Mot de passe du Créateur *</label>
-                            <input type="password" id="newTemplePass" placeholder="Choisissez votre code secret..." class="w-full px-4 py-3 bg-black/40 border border-greek-gold/30 rounded-2xl text-sm text-white focus:border-greek-gold focus:ring-1 focus:ring-greek-gold outline-none transition-all" required>
-                            <p class="text-[10px] text-slate-400 mt-1 font-sans">Ce code protège vos modifications et garantit que vous seul pouvez ajouter/retirer des souhaits.</p>
+                            <label class="block text-xs font-semibold text-stone-700 mb-1.5">Nom de l'événement ou de la liste *</label>
+                            <input type="text" id="newListTitle" placeholder="Ex: Anniversaire de Sophie, Mariage d'Alex & Léa..." class="w-full px-3.5 py-2.5 bg-stone-50/50 border border-stone-300 rounded-xl text-sm focus:bg-white focus:border-amber-gold focus:ring-2 focus:ring-amber-gold/20 outline-none transition-all" required>
                         </div>
 
-                        <button type="submit" class="w-full py-3.5 gold-button rounded-2xl font-cinzel font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-gavel"></i>
-                            <span>Ériger le Temple</span>
-                        </button>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-stone-700 mb-1.5">Votre Prénom / Nom *</label>
+                                <input type="text" id="newListOwner" placeholder="Ex: Sophie" class="w-full px-3.5 py-2.5 bg-stone-50/50 border border-stone-300 rounded-xl text-sm focus:bg-white focus:border-amber-gold focus:ring-2 focus:ring-amber-gold/20 outline-none transition-all" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-stone-700 mb-1.5">Mot de passe créateur *</label>
+                                <input type="password" id="newListPass" placeholder="Pour modifier plus tard..." class="w-full px-3.5 py-2.5 bg-stone-50/50 border border-stone-300 rounded-xl text-sm focus:bg-white focus:border-amber-gold focus:ring-2 focus:ring-amber-gold/20 outline-none transition-all" required>
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit" class="w-full py-3 bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                                <span>Créer ma liste de souhaits</span>
+                                <i class="fa-solid fa-arrow-right text-[11px] text-amber-gold"></i>
+                            </button>
+                        </div>
                     </form>
                 </div>
 
-                <!-- CARTE 2 : ACCÉDER À UN TEMPLE EXISTANT -->
-                <div class="marble-card rounded-3xl p-8 flex flex-col justify-between space-y-6">
-                    <div class="space-y-4">
-                        <div class="w-14 h-14 rounded-2xl border border-greek-gold/50 bg-greek-gold/10 flex items-center justify-center text-3xl text-greek-gold">
-                            🏺
+                <!-- Card Droite : Vos Listes & Recherche (5 cols) -->
+                <div class="md:col-span-5 space-y-6">
+                    <!-- Recherche / Code -->
+                    <div class="bg-white rounded-2xl border border-stone-200 p-6 card-shadow space-y-4">
+                        <div>
+                            <h3 class="text-xs font-bold text-stone-900 uppercase tracking-wider mb-1">Rejoindre par code</h3>
+                            <p class="text-xs text-stone-500">Entrez l'identifiant d'une liste partagée.</p>
                         </div>
-                        <h3 class="font-cinzel text-2xl font-bold text-greek-goldLight">Rejoindre un Temple</h3>
-                        <p class="text-xs text-slate-300 leading-relaxed">
-                            Vous possédez un identifiant de temple ou vous souhaitez retrouver un temple que vous avez déjà visité sur cet appareil ?
+                        <form onsubmit="handleFindList(event)" class="flex gap-2">
+                            <input type="text" id="inputListCode" placeholder="Ex: liste-sophie-3a2" class="flex-1 px-3.5 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs focus:bg-white focus:border-amber-gold outline-none" required>
+                            <button type="submit" class="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold text-xs rounded-xl transition-colors">
+                                Ouvrir
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Listes récemment consultées -->
+                    <div class="bg-white rounded-2xl border border-stone-200 p-6 card-shadow space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xs font-bold text-stone-900 uppercase tracking-wider">Listes enregistrées</h3>
+                            <span class="text-[11px] text-stone-400" id="savedListsCount">0</span>
+                        </div>
+                        <div id="savedListsContainer" class="space-y-2">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- ======================================================== -->
+        <!-- VUE 2 : ESPACE CRÉATEUR (ADMIN ANTI-SPOIL)                -->
+        <!-- ======================================================== -->
+        <section id="viewCreator" class="hidden space-y-8">
+            <!-- Header Bar -->
+            <div class="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 card-shadow space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 text-[11px] font-semibold">
+                                Espace Propriétaire
+                            </span>
+                            <span class="text-xs text-stone-400 font-mono" id="creatorListCode">#code</span>
+                        </div>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-stone-900" id="creatorListTitle">Ma Liste de Cadeaux</h2>
+                        <p class="text-xs text-stone-500 mt-0.5">Gérée par <span class="font-medium text-stone-800" id="creatorListOwner">Moi</span></p>
+                    </div>
+
+                    <!-- Add Button -->
+                    <button onclick="openGiftModal()" class="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold rounded-xl shadow-sm transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-plus text-amber-gold"></i>
+                        <span>Ajouter un cadeau</span>
+                    </button>
+                </div>
+
+                <!-- Anti Spoil Banner (Clair & Rassurant) -->
+                <div class="rounded-xl bg-stone-50 border border-stone-200 p-4 flex items-start gap-3.5">
+                    <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-gold shrink-0 mt-0.5">
+                        <i class="fa-solid fa-shield-halved text-sm"></i>
+                    </div>
+                    <div class="space-y-0.5">
+                        <h4 class="text-xs font-bold text-stone-900">Mode Surprise Activé (Zéro Spoil)</h4>
+                        <p class="text-xs text-stone-600 leading-relaxed">
+                            Pour ne pas gâcher la surprise de vos cadeaux, les réservations faites par vos proches ne sont <strong>pas visibles</strong> sur cet écran. Vous pouvez ajouter, modifier ou retirer des cadeaux à tout moment.
                         </p>
                     </div>
-
-                    <div class="space-y-5">
-                        <form onsubmit="handleJoinTempleById(event)" class="space-y-3">
-                            <label class="block font-cinzel text-xs text-greek-gold uppercase tracking-wider">Identifiant du Temple</label>
-                            <div class="flex gap-2">
-                                <input type="text" id="inputTempleSlug" placeholder="Ex: anniversaire-helene-x89" class="flex-1 px-4 py-3 bg-black/40 border border-greek-gold/30 rounded-2xl text-sm text-white focus:border-greek-gold outline-none" required>
-                                <button type="submit" class="px-5 py-3 rounded-2xl border border-greek-gold text-greek-gold hover:bg-greek-gold hover:text-black font-cinzel font-bold text-xs tracking-wider transition-all">
-                                    Entrer
-                                </button>
-                            </div>
-                        </form>
-
-                        <!-- Historique local des temples -->
-                        <div class="pt-3 border-t border-greek-gold/20">
-                            <h4 class="font-cinzel text-xs text-slate-400 uppercase tracking-wider mb-2">Vos Temples Récentes</h4>
-                            <div id="recentTemplesList" class="space-y-2">
-                                <p class="text-xs text-slate-500 italic">Aucun temple récent enregistré sur cet appareil.</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
+                <!-- Guest Link Bar -->
+                <div class="pt-2 border-t border-stone-100 flex flex-col sm:flex-row sm:items-center gap-3">
+                    <span class="text-xs font-semibold text-stone-700 whitespace-nowrap">Lien à envoyer aux invités :</span>
+                    <div class="flex-1 flex items-center gap-2">
+                        <input type="text" id="guestLinkInput" readonly class="flex-1 px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-lg text-xs font-mono text-stone-700 outline-none select-all">
+                        <button onclick="copyGuestLink()" class="px-3.5 py-1.5 bg-stone-900 text-white rounded-lg text-xs font-semibold hover:bg-stone-800 transition-colors flex items-center gap-1.5">
+                            <i class="fa-regular fa-copy text-[11px]"></i> Copier
+                        </button>
+                    </div>
+                    <a id="testGuestViewBtn" href="#" target="_blank" class="px-3.5 py-1.5 rounded-lg border border-stone-200 text-stone-700 text-xs font-semibold hover:bg-stone-50 transition-colors text-center">
+                        Tester la vue invité ↗
+                    </a>
+                </div>
+            </div>
+
+            <!-- Gift Items List -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-bold text-stone-900">Mes Cadeaux Souhaités</h3>
+                    <span class="text-xs text-stone-500 font-medium" id="creatorItemCount">0 cadeau</span>
+                </div>
+
+                <div id="creatorGiftsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <!-- Cards -->
+                </div>
+
+                <!-- Empty state -->
+                <div id="creatorEmptyState" class="hidden text-center py-16 px-4 bg-white rounded-2xl border border-dashed border-stone-300">
+                    <div class="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center text-stone-400 mx-auto text-xl mb-3">
+                        <i class="fa-solid fa-gift"></i>
+                    </div>
+                    <h4 class="text-sm font-bold text-stone-800">Aucun cadeau dans votre liste</h4>
+                    <p class="text-xs text-stone-500 max-w-xs mx-auto mt-1 mb-4">Commencez par ajouter le premier cadeau que vous aimeriez recevoir.</p>
+                    <button onclick="openGiftModal()" class="px-4 py-2 bg-stone-900 text-white text-xs font-semibold rounded-xl hover:bg-stone-800 transition-colors">
+                        + Ajouter un cadeau
+                    </button>
+                </div>
             </div>
         </section>
 
 
-        <!-- ========================================================== -->
-        <!-- 2. VUE CRÉATEUR (ADMIN ANTI-SPOIL DANS SON TEMPLE)         -->
-        <!-- ========================================================== -->
-        <section id="viewCreator" class="hidden space-y-8">
-            <!-- Fronton du Temple -->
-            <div class="marble-card rounded-3xl p-6 sm:p-8 relative overflow-hidden border-2 border-greek-gold/40">
-                <div class="absolute right-0 top-0 bottom-0 w-36 pillar opacity-20 pointer-events-none hidden md:block"></div>
-                <div class="relative z-10 space-y-4 max-w-3xl">
-                    <div class="flex items-center gap-3">
-                        <span class="px-3 py-1 rounded-full bg-greek-gold/20 border border-greek-gold/40 text-greek-gold text-xs font-cinzel uppercase font-bold tracking-widest">
-                            👑 Autel du Fondateur
-                        </span>
-                        <span class="text-xs text-slate-300 font-cinzel" id="creatorTempleIdDisplay">#temple-id</span>
-                    </div>
-
-                    <h2 class="font-cinzel text-3xl sm:text-4xl font-black gold-gradient-text" id="creatorTempleTitle">
-                        Temple des Souhaits
-                    </h2>
-                    <p class="text-slate-300 text-sm">
-                        Bienvenue, noble <span class="font-bold text-greek-goldLight" id="creatorOwnerName">Créateur</span>. Ajoutez vos souhaits sacrés avec leurs précieux détails.
-                    </p>
-
-                    <!-- Avertissement Sacré Anti-Spoil -->
-                    <div class="p-4 rounded-2xl bg-black/60 border border-greek-gold/40 flex items-start gap-3.5">
-                        <span class="text-2xl text-greek-gold">🛡️</span>
-                        <div>
-                            <h4 class="font-cinzel text-xs font-bold text-greek-gold uppercase tracking-wider">Le Pacte du Secret d'Apollon (Anti-Spoil)</h4>
-                            <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">
-                                Les dieux dissimulent scrupuleusement les réservations faites par vos proches. Même en tant que souverain de ce temple, vous ne saurez jamais qui a réservé quoi afin que l'émerveillement de la découverte demeure intact !
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Parchemin à partager aux invités -->
-                    <div class="pt-2 space-y-2">
-                        <label class="block font-cinzel text-xs text-greek-gold uppercase tracking-wider">Parchemin Secret à transmettre à vos invités :</label>
-                        <div class="flex flex-col sm:flex-row items-stretch gap-2">
-                            <div class="flex-1 bg-black/60 border border-greek-gold/30 rounded-2xl px-4 py-3 flex items-center justify-between text-xs font-mono text-greek-goldLight truncate">
-                                <span id="guestShareUrl" class="truncate">https://...</span>
-                                <button onclick="copyGuestUrl()" class="ml-2 px-3 py-1 bg-greek-gold/20 hover:bg-greek-gold/40 border border-greek-gold/40 text-greek-gold rounded-lg font-cinzel text-xs font-bold transition-colors">
-                                    Copier
-                                </button>
-                            </div>
-                            <a id="previewGuestBtn" href="#" target="_blank" class="px-5 py-3 rounded-2xl border border-greek-gold/60 text-greek-goldLight hover:bg-greek-gold/10 font-cinzel text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all">
-                                <span>Aperçu Invités</span>
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Barre d'offrandes -->
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-3 border-b border-greek-gold/20">
-                <div>
-                    <h3 class="font-cinzel text-xl font-bold text-greek-goldLight">Mes Souhaits Sacrés</h3>
-                    <p class="text-xs text-slate-400 font-cinzel" id="creatorGiftCount">0 offrande répertoriée</p>
-                </div>
-                <button onclick="openGiftModal()" class="w-full sm:w-auto px-6 py-3 gold-button rounded-2xl font-cinzel font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>Ajouter une Offrande</span>
-                </button>
-            </div>
-
-            <!-- Grille des souhaits (Créateur) -->
-            <div id="creatorGiftsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-
-            <!-- État vide -->
-            <div id="creatorEmptyState" class="hidden text-center py-16 px-4 marble-card rounded-3xl border border-greek-gold/20">
-                <div class="text-5xl mb-4">🏺</div>
-                <h4 class="font-cinzel text-lg font-bold text-greek-goldLight">L'Autel est encore vierge de souhaits</h4>
-                <p class="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-6">
-                    Inscrivez votre premier vœu sacré afin que vos proches puissent honorer votre temple.
-                </p>
-                <button onclick="openGiftModal()" class="px-6 py-3 gold-button rounded-2xl font-cinzel font-bold text-xs uppercase tracking-widest">
-                    + Déposer mon premier souhait
-                </button>
-            </div>
-        </section>
-
-
-        <!-- ========================================================== -->
-        <!-- 3. VUE INVITÉ (POUR LES PROCHES, AVEC RÉSERVATIONS)        -->
-        <!-- ========================================================== -->
+        <!-- ======================================================== -->
+        <!-- VUE 3 : ESPACE INVITÉS (RÉSERVATIONS PAR NOM)             -->
+        <!-- ======================================================== -->
         <section id="viewGuest" class="hidden space-y-8">
-            <!-- Fronton Invité -->
-            <div class="marble-card rounded-3xl p-6 sm:p-8 relative overflow-hidden border-2 border-greek-gold/40">
-                <div class="relative z-10 space-y-3 max-w-3xl">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-greek-gold/10 border border-greek-gold/30 text-greek-gold text-xs font-cinzel uppercase font-bold tracking-widest">
-                        🌿 Sanctuaire des Invités & Proches
-                    </div>
-                    <h2 class="font-cinzel text-3xl sm:text-4xl font-black gold-gradient-text" id="guestTempleTitle">
-                        Temple des Souhaits
-                    </h2>
-                    <p class="text-slate-300 text-sm leading-relaxed">
-                        Vous voici dans le temple sacré de <strong class="text-greek-goldLight" id="guestOwnerName">...</strong>.
-                        Choisissez l'offrande que vous souhaitez lui faire et réservez-la à votre nom pour éviter les offrandes en double.
-                        <span class="text-greek-gold font-bold">Le créateur n'en saura absolument rien !</span>
-                    </p>
+            <!-- Guest Header -->
+            <div class="bg-white rounded-2xl border border-stone-200 p-6 sm:p-8 card-shadow space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold">
+                        Espace Invités
+                    </span>
+                    <button onclick="promptCreatorAuth()" class="text-xs text-stone-500 hover:text-stone-900 font-medium flex items-center gap-1">
+                        <i class="fa-solid fa-lock text-[10px]"></i> Accès Propriétaire
+                    </button>
                 </div>
-            </div>
-
-            <!-- Filtres & Compteurs -->
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-3 border-b border-greek-gold/20">
-                <div>
-                    <h3 class="font-cinzel text-xl font-bold text-greek-goldLight">Le Registre des Offrandes</h3>
-                    <p class="text-xs text-slate-400 font-cinzel" id="guestGiftCount">Chargement des offrandes...</p>
-                </div>
-
-                <div class="flex items-center gap-1.5 p-1 bg-black/40 border border-greek-gold/20 rounded-2xl text-xs font-cinzel">
-                    <button onclick="setGuestFilter('all')" id="filterBtnAll" class="px-3 py-1.5 rounded-xl bg-greek-gold text-black font-bold transition-all">Toutes</button>
-                    <button onclick="setGuestFilter('available')" id="filterBtnAvail" class="px-3 py-1.5 rounded-xl text-slate-300 hover:text-greek-gold transition-all">Libres</button>
-                    <button onclick="setGuestFilter('reserved')" id="filterBtnRes" class="px-3 py-1.5 rounded-xl text-slate-300 hover:text-greek-gold transition-all">Réservées</button>
-                </div>
-            </div>
-
-            <!-- Grille des souhaits (Invités) -->
-            <div id="guestGiftsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-
-            <!-- État vide Invité -->
-            <div id="guestEmptyState" class="hidden text-center py-16 px-4 marble-card rounded-3xl border border-greek-gold/20">
-                <div class="text-5xl mb-4">🏛️</div>
-                <h4 class="font-cinzel text-lg font-bold text-greek-goldLight">Aucun souhait trouvé</h4>
-                <p class="text-xs text-slate-400 max-w-sm mx-auto mt-1">
-                    Ce temple n'a pas encore de souhaits ou le filtre sélectionné est vide.
+                <h2 class="text-2xl sm:text-3xl font-bold text-stone-900" id="guestListTitle">Liste de Souhaits</h2>
+                <p class="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                    Voici les souhaits de <strong class="text-stone-900" id="guestListOwner">...</strong>. Réservez un cadeau pour éviter les doublons. 
+                    <span class="font-medium text-stone-900">Le destinataire ne verra pas qui a réservé.</span>
                 </p>
+            </div>
+
+            <!-- Filters & Counter -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-stone-200">
+                <div class="text-xs text-stone-500 font-medium" id="guestGiftCounter">
+                    Chargement des cadeaux...
+                </div>
+
+                <div class="flex items-center gap-1 bg-stone-100 p-1 rounded-xl text-xs font-medium self-start sm:self-auto">
+                    <button onclick="filterGuestItems('all')" id="filterAll" class="px-3 py-1 rounded-lg bg-white text-stone-900 font-semibold shadow-xs">Tous</button>
+                    <button onclick="filterGuestItems('available')" id="filterAvail" class="px-3 py-1 rounded-lg text-stone-600 hover:text-stone-900">Disponibles</button>
+                    <button onclick="filterGuestItems('reserved')" id="filterRes" class="px-3 py-1 rounded-lg text-stone-600 hover:text-stone-900">Réservés</button>
+                </div>
+            </div>
+
+            <!-- Grid -->
+            <div id="guestGiftsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <!-- Cards -->
+            </div>
+
+            <!-- Guest Empty -->
+            <div id="guestEmptyState" class="hidden text-center py-16 px-4 bg-white rounded-2xl border border-stone-200">
+                <p class="text-xs text-stone-500">Aucun cadeau ne correspond à ce filtre.</p>
             </div>
         </section>
 
     </main>
 
-    <!-- Frise inférieure -->
-    <div class="meander-border mt-auto"></div>
-
-    <!-- Footer Antique -->
-    <footer class="bg-black/80 border-t border-greek-gold/20 py-6 text-center text-xs font-cinzel text-slate-400">
-        <p class="gold-gradient-text font-cinzelDeco text-sm tracking-widest mb-1">TEMPLE DES SOUHAITS</p>
-        <p>Hébergé avec honneur sur les terres sacrées de GitHub Pages · Protégé contre tout spoil divin</p>
+    <!-- Footer Simple & Pro -->
+    <footer class="mt-auto border-t border-stone-200 bg-white py-6">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-stone-500">
+            <div class="flex items-center gap-2">
+                <span class="font-serif font-bold text-stone-800">TEMPLE DES SOUHAITS</span>
+                <span>·</span>
+                <span>Listes de cadeaux sans doublon</span>
+            </div>
+            <div>
+                Hébergé en direct sur GitHub Pages
+            </div>
+        </div>
     </footer>
 
-    <!-- ========================================================== -->
-    <!-- MODAL : CONNEXION AU TEMPLE EN TANT QUE CRÉATEUR          -->
-    <!-- ========================================================== -->
-    <div id="modalLogin" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="marble-card rounded-3xl p-6 sm:p-8 max-w-md w-full border-2 border-greek-gold/50 space-y-6">
-            <div class="text-center space-y-2">
-                <div class="w-14 h-14 rounded-full border border-greek-gold bg-greek-gold/10 flex items-center justify-center mx-auto text-2xl text-greek-gold">
-                    🔑
-                </div>
-                <h3 class="font-cinzel text-2xl font-bold text-greek-goldLight">Sceau du Créateur</h3>
-                <p class="text-xs text-slate-300">
-                    Déverrouillez l'autel d'administration de votre temple.
-                </p>
+
+    <!-- ======================================================== -->
+    <!-- MODAL : AJOUTER / MODIFIER UN CADEAU                     -->
+    <!-- ======================================================== -->
+    <div id="modalGift" class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-stone-200 space-y-5 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-stone-100">
+                <h3 class="text-base font-bold text-stone-900" id="modalGiftHeading">Ajouter un cadeau</h3>
+                <button onclick="closeModal('modalGift')" class="text-stone-400 hover:text-stone-600">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
             </div>
 
-            <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+            <form onsubmit="handleSaveGift(event)" class="space-y-4">
+                <input type="hidden" id="editGiftId">
+
                 <div>
-                    <label class="block font-cinzel text-xs text-greek-gold uppercase tracking-wider mb-1.5">Mot de passe secret</label>
-                    <input type="password" id="modalLoginPass" placeholder="Entrez votre mot de passe..." class="w-full px-4 py-3 bg-black/60 border border-greek-gold/30 rounded-2xl text-sm text-white focus:border-greek-gold outline-none" required autofocus>
-                    <p id="modalLoginError" class="text-xs text-rose-400 font-bold mt-1.5 hidden">Mot de passe incorrect pour ce temple.</p>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Nom de l'article *</label>
+                    <input type="text" id="inputGiftName" placeholder="Ex: Montre connectée, Livre d'art, Vélo..." class="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm focus:border-amber-gold focus:ring-2 focus:ring-amber-gold/20 outline-none" required>
                 </div>
 
-                <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="closeModal('modalLogin')" class="flex-1 py-3 rounded-2xl border border-greek-gold/30 text-slate-300 hover:bg-white/5 font-cinzel text-xs font-bold">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-stone-700 mb-1">Prix indicatif (€)</label>
+                        <input type="number" step="0.01" id="inputGiftPrice" placeholder="Ex: 59.99" class="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm focus:border-amber-gold focus:ring-2 focus:ring-amber-gold/20 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-stone-700 mb-1">Catégorie</label>
+                        <input type="text" id="inputGiftCategory" placeholder="Ex: Tech, Maison..." class="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm focus:border-amber-gold focus:ring-2 focus:ring-amber-gold/20 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Lien d'achat (URL)</label>
+                    <input type="url" id="inputGiftUrl" placeholder="https://www.site.com/produit..." class="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm focus:border-amber-gold focus:ring-2 focus:ring-amber-gold/20 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Lien d'une photo (URL)</label>
+                    <input type="url" id="inputGiftImg" placeholder="https://..." class="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm focus:border-amber-gold focus:ring-2 focus:ring-amber-gold/20 outline-none" oninput="previewImage(this.value)">
+                </div>
+
+                <div id="imgPreviewWrapper" class="hidden h-32 rounded-xl overflow-hidden border border-stone-200 bg-stone-50 flex items-center justify-center">
+                    <img id="imgPreview" src="" alt="Aperçu" class="w-full h-full object-cover">
+                </div>
+
+                <div class="flex gap-2.5 pt-3">
+                    <button type="button" onclick="closeModal('modalGift')" class="flex-1 py-2.5 border border-stone-200 rounded-xl text-xs font-semibold text-stone-700 hover:bg-stone-50">
                         Annuler
                     </button>
-                    <button type="submit" class="flex-1 py-3 gold-button rounded-2xl font-cinzel font-bold text-xs uppercase tracking-wider">
+                    <button type="submit" class="flex-1 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold">
+                        Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ======================================================== -->
+    <!-- MODAL : RÉSERVER (INVITÉ)                                -->
+    <!-- ======================================================== -->
+    <div id="modalReserve" class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-stone-200 space-y-4">
+            <div>
+                <h3 class="text-base font-bold text-stone-900">Réserver ce cadeau</h3>
+                <p class="text-xs text-stone-500 mt-0.5 line-clamp-1" id="reserveItemName">...</p>
+            </div>
+
+            <form onsubmit="handleConfirmReserve(event)" class="space-y-4">
+                <input type="hidden" id="reserveItemId">
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Votre Prénom ou Nom *</label>
+                    <input type="text" id="reserveNameInput" placeholder="Ex: Thomas, Marie..." class="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm focus:border-amber-gold focus:ring-2 focus:ring-amber-gold/20 outline-none" required autofocus>
+                    <p class="text-[11px] text-stone-400 mt-1">Visible uniquement par les autres invités pour ne pas acheter le même.</p>
+                </div>
+
+                <div class="flex gap-2 pt-1">
+                    <button type="button" onclick="closeModal('modalReserve')" class="flex-1 py-2.5 border border-stone-200 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-50">
+                        Annuler
+                    </button>
+                    <button type="submit" class="flex-1 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold">
+                        Confirmer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ======================================================== -->
+    <!-- MODAL : CONNEXION PROPRIÉTAIRE                          -->
+    <!-- ======================================================== -->
+    <div id="modalAuth" class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-stone-200 space-y-4">
+            <div>
+                <h3 class="text-base font-bold text-stone-900">Accès Propriétaire</h3>
+                <p class="text-xs text-stone-500 mt-0.5">Entrez votre mot de passe pour gérer cette liste.</p>
+            </div>
+
+            <form onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                <div>
+                    <input type="password" id="authPasswordInput" placeholder="Mot de passe..." class="w-full px-3.5 py-2.5 border border-stone-300 rounded-xl text-sm focus:border-amber-gold focus:ring-2 focus:ring-amber-gold/20 outline-none" required autofocus>
+                    <p id="authErrorMsg" class="text-xs text-rose-600 font-semibold mt-1 hidden">Mot de passe incorrect.</p>
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeModal('modalAuth')" class="flex-1 py-2.5 border border-stone-200 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-50">
+                        Annuler
+                    </button>
+                    <button type="submit" class="flex-1 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold">
                         Déverrouiller
                     </button>
                 </div>
@@ -409,107 +450,14 @@
         </div>
     </div>
 
-    <!-- ========================================================== -->
-    <!-- MODAL : AJOUTER / MODIFIER UNE OFFRANDE (CRÉATEUR)        -->
-    <!-- ========================================================== -->
-    <div id="modalGift" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="marble-card rounded-3xl p-6 sm:p-8 max-w-lg w-full border-2 border-greek-gold/50 space-y-6 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between pb-3 border-b border-greek-gold/20">
-                <h3 class="font-cinzel text-xl font-bold text-greek-goldLight flex items-center gap-2" id="modalGiftTitle">
-                    <span>🏺</span> Ajouter une Offrande Sacrée
-                </h3>
-                <button onclick="closeModal('modalGift')" class="text-slate-400 hover:text-greek-gold text-lg">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <form onsubmit="handleSaveGift(event)" class="space-y-4">
-                <input type="hidden" id="giftEditId">
-
-                <div>
-                    <label class="block font-cinzel text-xs text-greek-gold uppercase tracking-wider mb-1.5">Nom du Souhait / Cadeau *</label>
-                    <input type="text" id="giftName" placeholder="Ex: Coffret livresque, Statuette d'Athéna, Smartphone..." class="w-full px-4 py-2.5 bg-black/60 border border-greek-gold/30 rounded-2xl text-sm text-white focus:border-greek-gold outline-none" required>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-cinzel text-xs text-greek-gold uppercase tracking-wider mb-1.5">Valeur estimée (€)</label>
-                        <input type="number" step="0.01" id="giftPrice" placeholder="Ex: 75.00" class="w-full px-4 py-2.5 bg-black/60 border border-greek-gold/30 rounded-2xl text-sm text-white focus:border-greek-gold outline-none">
-                    </div>
-                    <div>
-                        <label class="block font-cinzel text-xs text-greek-gold uppercase tracking-wider mb-1.5">Catégorie</label>
-                        <input type="text" id="giftCategory" placeholder="Ex: Culture, High-Tech, Voyage..." class="w-full px-4 py-2.5 bg-black/60 border border-greek-gold/30 rounded-2xl text-sm text-white focus:border-greek-gold outline-none">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block font-cinzel text-xs text-greek-gold uppercase tracking-wider mb-1.5">Lien d'achat de l'offrande (URL)</label>
-                    <input type="url" id="giftUrl" placeholder="https://..." class="w-full px-4 py-2.5 bg-black/60 border border-greek-gold/30 rounded-2xl text-sm text-white focus:border-greek-gold outline-none">
-                </div>
-
-                <div>
-                    <label class="block font-cinzel text-xs text-greek-gold uppercase tracking-wider mb-1.5">Lien de la photo / icône (URL)</label>
-                    <input type="url" id="giftImage" placeholder="https://images.unsplash.com/... ou .jpg/.png" class="w-full px-4 py-2.5 bg-black/60 border border-greek-gold/30 rounded-2xl text-sm text-white focus:border-greek-gold outline-none" oninput="previewGiftImg(this.value)">
-                    <p class="text-[10px] text-slate-400 mt-1">Si laissé vide, une splendide urne antique sera représentée.</p>
-                </div>
-
-                <div id="giftImgPreviewContainer" class="hidden h-36 rounded-2xl overflow-hidden border border-greek-gold/30 bg-black/40 flex items-center justify-center">
-                    <img id="giftImgPreview" src="" alt="Aperçu" class="w-full h-full object-cover">
-                </div>
-
-                <div class="flex gap-3 pt-3">
-                    <button type="button" onclick="closeModal('modalGift')" class="flex-1 py-3 rounded-2xl border border-greek-gold/30 text-slate-300 hover:bg-white/5 font-cinzel text-xs font-bold">
-                        Annuler
-                    </button>
-                    <button type="submit" class="flex-1 py-3 gold-button rounded-2xl font-cinzel font-bold text-xs uppercase tracking-widest">
-                        Consigner le Vœu
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- ========================================================== -->
-    <!-- MODAL : RÉSERVER UNE OFFRANDE (INVITÉ)                    -->
-    <!-- ========================================================== -->
-    <div id="modalReserve" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="marble-card rounded-3xl p-6 sm:p-8 max-w-md w-full border-2 border-greek-gold/50 space-y-6">
-            <div class="text-center space-y-2">
-                <div class="w-14 h-14 rounded-full border border-greek-gold bg-greek-gold/10 flex items-center justify-center mx-auto text-2xl text-greek-gold">
-                    🎁
-                </div>
-                <h3 class="font-cinzel text-2xl font-bold text-greek-goldLight">Offrir ce Cadeau</h3>
-                <p class="text-xs text-slate-300" id="reserveGiftName">...</p>
-            </div>
-
-            <form onsubmit="handleConfirmReservation(event)" class="space-y-4">
-                <input type="hidden" id="reserveGiftId">
-                <div>
-                    <label class="block font-cinzel text-xs text-greek-gold uppercase tracking-wider mb-1.5">Votre Nom ou Prénom *</label>
-                    <input type="text" id="reserveGuestName" placeholder="Ex: Alexandre, Pénélope, Achille..." class="w-full px-4 py-3 bg-black/60 border border-greek-gold/30 rounded-2xl text-sm text-white focus:border-greek-gold outline-none" required autofocus>
-                    <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                        Ce nom sera visible uniquement par les autres invités pour éviter les doublons. Le créateur ne le verra jamais !
-                    </p>
-                </div>
-
-                <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="closeModal('modalReserve')" class="flex-1 py-3 rounded-2xl border border-greek-gold/30 text-slate-300 hover:bg-white/5 font-cinzel text-xs font-bold">
-                        Annuler
-                    </button>
-                    <button type="submit" class="flex-1 py-3 gold-button rounded-2xl font-cinzel font-bold text-xs uppercase tracking-wider">
-                        Confirmer la Réservation
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- Notification Toast -->
-    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none marble-card border border-greek-gold text-greek-goldLight px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-cinzel">
-        <span class="text-base text-greek-gold" id="toastIcon">✨</span>
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-stone-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-medium">
+        <span class="text-amber-gold" id="toastIcon">✓</span>
         <span id="toastMsg">Notification</span>
     </div>
 
+    <!-- Application Script -->
     <script src="app.js"></script>
 </body>
 </html>
