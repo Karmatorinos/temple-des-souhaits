@@ -179,13 +179,16 @@
                     <div class="marble-pro-card rounded-3xl p-6 space-y-4">
                         <div>
                             <h3 class="font-cinzel text-xs font-bold text-temple-goldLight uppercase tracking-wider mb-1">Rejoindre un Temple</h3>
-                            <p class="text-xs text-slate-300">Entrez le code unique fourni par le créateur.</p>
+                            <p class="text-xs text-slate-300">Si un proche vous a partagé le code de son temple (affiché en haut de sa liste, ex: <span class="text-temple-gold font-mono">#mariage-alex-lea</span>), collez-le ici :</p>
                         </div>
-                        <form onsubmit="handleFindList(event)" class="flex gap-2">
-                            <input type="text" id="inputListCode" placeholder="Ex: liste-sophie-3a2" class="flex-1 px-3.5 py-2.5 bg-black/60 border border-temple-marbleBorder rounded-xl text-xs text-white focus:border-temple-gold outline-none placeholder:text-slate-500" required>
-                            <button type="submit" class="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-cinzel font-bold text-xs rounded-xl transition-colors">
-                                Entrer
-                            </button>
+                        <form onsubmit="handleFindList(event)" class="space-y-2">
+                            <div class="flex gap-2">
+                                <input type="text" id="inputListCode" placeholder="Ex: #mariage-alex-lea ou lien complet..." class="flex-1 px-3.5 py-2.5 bg-black/60 border border-temple-marbleBorder rounded-xl text-xs text-white focus:border-temple-gold outline-none placeholder:text-slate-500" required>
+                                <button type="submit" class="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-cinzel font-bold text-xs rounded-xl transition-colors">
+                                    Entrer
+                                </button>
+                            </div>
+                            <p class="text-[10px] text-slate-400">💡 Conseil : Cliquer directement sur le lien envoyé par le créateur ouvre le temple automatiquement.</p>
                         </form>
                     </div>
 
