@@ -552,14 +552,13 @@ function displayScrapedImage(url) {
     }
 }
 
-// SCRAPER MULTI-SOURCES : Contourne les protections anti-scraping
+// SCRAPER MULTI-SOURCES : Contourne les protections anti-scraping d'Amazon & marchands
 async function autoFetchProductFromUrl(rawUrl) {
     if (!rawUrl || !rawUrl.startsWith("http")) return;
 
     const spinner = document.getElementById("fetchBtnSpinner");
     const text = document.getElementById("fetchBtnText");
     const nameInput = document.getElementById("inputGiftName");
-    const priceInput = document.getElementById("inputGiftPrice");
     const catInput = document.getElementById("inputGiftCategory");
 
     spinner.classList.remove("hidden");
@@ -567,17 +566,41 @@ async function autoFetchProductFromUrl(rawUrl) {
 
     let foundImage = null;
     let foundTitle = null;
-    let foundPrice = null;
 
-    // 1. Spécifique Amazon : extraction directe de l'ASIN pour obtenir la photo officielle HD sans blocage
-    const amazonAsinMatch = rawUrl.match(/\/([A-Z0-9]{10})(?:[/?]|$)/i);
-    if (rawUrl.includes("amazon.") && amazonAsinMatch) {
-        const asin = amazonAsinMatch[1];
-        // CDN officiel Amazon images directes
-        foundImage = `https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_.jpg`;
+    // 1. Spécifique AMAZON : Extraction chirurgicale de l'ASIN avec test des 3 CDN d'images officiels non-bloqués
+    const isAmazon = /amazon\.(fr|com|de|co\.uk|es|it|ca)/i.test(rawUrl);
+    const amazonAsinMatch = rawUrl.match(/(?:\/dp\/|\/gp\/product\/|\/ASIN\/|\/d\/)([A-Z0-9]{10})/i) ||
+                           rawUrl.match(/\/([A-Z0-9]{10})(?:[/?]|$)/i);
+
+    if (isAmazon && amazonAsinMatch) {
+        const asin = amazonAsinMatch[1].toUpperCase();
+        // Le CDN média Amazon direct (ssl-images-amazon / m.media-amazon) ne bloque JAMAIS les requêtes d'images !
+        const testAmazonUrl = `https://m.media-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_.jpg`;
+        
+        // Vérification rapide de validité
+        const imgTest = new Image();
+        imgTest.onload = () => {
+            if (imgTest.naturalWidth > 1) {
+                foundImage = testAmazonUrl;
+                displayScrapedImage(foundImage);
+            }
+        };
+        imgTest.onerror = () => {
+            // Deuxième format CDN Amazon de secours
+            foundImage = `https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SX600_.jpg`;
+            displayScrapedImage(foundImage);
+        };
+        imgTest.src = testAmazonUrl;
+        foundImage = testAmazonUrl;
+
+        // Titre générique si vide depuis l'URL
+        const urlSlug = rawUrl.split('/')[3] || "";
+        if (urlSlug && !urlSlug.startsWith("dp") && !nameInput.value) {
+            nameInput.value = decodeURIComponent(urlSlug.replace(/-/g, ' '));
+        }
     }
 
-    // 2. Moteur 1 : Proxy Métadonnées enrichies (OpenGraph / Twitter Cards)
+    // 2. Moteur Métadonnées Universel (Pour Fnac, Leclerc, Boulanger, Darty, etc.)
     if (!foundImage || !foundTitle) {
         try {
             const encoded = encodeURIComponent(rawUrl);
@@ -592,11 +615,11 @@ async function autoFetchProductFromUrl(rawUrl) {
                 }
             }
         } catch (e) {
-            console.log("Moteur 1 indisponible, passage au moteur 2");
+            console.log("Moteur Microlink ignoré");
         }
     }
 
-    // 3. Moteur 2 : Fallback CORS Proxy pour analyser les balises og:image et ld+json
+    // 3. Moteur Proxy CORS Fallback : scraping direct du HTML (balises og:image)
     if (!foundImage) {
         try {
             const proxyRes = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rawUrl)}`);
@@ -614,27 +637,24 @@ async function autoFetchProductFromUrl(rawUrl) {
                 }
             }
         } catch (e) {
-            console.log("Moteur 2 indisponible");
+            console.log("Moteur Proxy ignoré");
         }
     }
 
-    // 4. Moteur 3 : Fallback Image par domaine ou aperçu web
+    // 4. Moteur Fallback Visuel (Aperçu direct du produit)
     if (!foundImage) {
-        // Capture d'écran instantanée du produit par proxy de rendu
         foundImage = `https://image.thum.io/get/width/600/crop/600/${rawUrl}`;
     }
 
-    // Application dans le formulaire
     if (foundImage) {
         displayScrapedImage(foundImage);
     }
     if (foundTitle && !nameInput.value) {
-        // Nettoyage du titre (enlève les suffixes type " - Fnac", " : Amazon.fr", etc.)
         let cleanTitle = foundTitle.split(/[-–|:]/)[0].trim();
         nameInput.value = cleanTitle || foundTitle;
     }
 
-    // Détection automatique de catégorie d'après l'URL
+    // Catégorisation
     if (!catInput.value) {
         if (/livre|book|fnac/i.test(rawUrl)) catInput.value = "Livre & Culture";
         else if (/jeu|game|playstation|nintendo|xbox/i.test(rawUrl)) catInput.value = "Jeux & High-Tech";
@@ -644,7 +664,27 @@ async function autoFetchProductFromUrl(rawUrl) {
 
     spinner.classList.add("hidden");
     text.textContent = "Extraire";
-    showToast(foundImage ? "Photo et informations récupérées avec succès !" : "Lien enregistré !");
+    showToast(foundImage ? "Photo du produit récupérée !" : "Lien enregistré !");
+}
+
+// OPTION DE SECOURS : Importer une image depuis l'ordinateur
+function handleLocalImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Limitation de taille (max 3Mo pour le stockage)
+    if (file.size > 3 * 1024 * 1024) {
+        alert("L'image est trop lourde (max 3 Mo). Choisissez une image plus légère.");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64Img = e.target.result;
+        displayScrapedImage(base64Img);
+        showToast("Photo importée depuis votre ordinateur ! 📸");
+    };
+    reader.readAsDataURL(file);
 }
 
 function handleSaveGift(event) {
