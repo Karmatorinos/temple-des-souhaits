@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temple des Souhaits 🎁</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fdf4ff',
+                            100: '#fae8ff',
+                            500: '#d946ef',
+                            600: '#c026d3',
+                            700: '#a21caf',
+                            900: '#701a75',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-purple-50 to-pink-50 min-h-screen text-slate-800 font-sans antialiased flex flex-col">
+
+    <!-- Navbar -->
+    <header class="bg-white/80 border-b border-slate-200 sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('auto')">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-fuchsia-600 to-pink-500 flex items-center justify-center text-white text-xl shadow-lg shadow-pink-500/25">
+                    ✨
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-fuchsia-600 to-pink-600 bg-clip-text text-transparent">
+                        Temple des Souhaits
+                    </h1>
+                    <p class="text-xs text-slate-600 font-medium" id="pageSubtitle">Liste magique de cadeaux</p>
+                </div>
+            </div>
+
+            <!-- Mode Badges / Quick Navigation -->
+            <div class="flex items-center gap-2">
+                <span id="roleBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"></span>
+                <button id="authBtn" onclick="handleAuthClick()" class="text-xs px-3 py-1.5 rounded-xl border font-medium transition-all duration-200 hover:bg-slate-100 flex items-center gap-1.5">
+                    <i class="fa-solid fa-lock text-[10px]"></i>
+                    <span id="authBtnText">Accès Créateur</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Global Notice for Synced Storage / Cloud Sync -->
+    <div id="storageBanner" class="bg-gradient-to-r from-purple-700 to-indigo-700 text-white text-xs py-2 px-4 shadow-inner">
+        <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="syncStatusText">Synchronisation active (Multi-appareils en temps réel)</span>
+            </div>
+            <button onclick="toggleCloudConfig()" class="underline hover:text-pink-200 transition-colors flex items-center gap-1 text-[11px]">
+                <i class="fa-solid fa-gear"></i> Configurer Firebase
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase Config Modal -->
+    <div id="firebaseModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-cloud text-fuchsia-600"></i> Synchronisation en ligne (Firebase)
+                </h3>
+                <button onclick="toggleCloudConfig()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 leading-relaxed">
+                Par défaut, une base partagée publique gratuite est connectée pour que les invités et toi voyiez les mêmes cadeaux instantanément sur n'importe quel téléphone ou PC ! Tu peux aussi renseigner ta propre clé Firebase si tu le souhaites.
+            </p>
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-slate-700">Firebase Realtime Database URL</label>
+                <input type="text" id="customDbUrl" placeholder="https://ton-projet-default-rtdb.firebaseio.com" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-fuchsia-500 outline-none">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="toggleCloudConfig()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Fermer</button>
+                <button onclick="saveCustomCloudConfig()" class="px-4 py-2 text-xs font-semibold text-white bg-fuchsia-600 hover:bg-fuchsia-700 rounded-xl shadow-md">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-6xl mx-auto px-4 sm:px-6 py-8 w-full">
+
+        <!-- ==================== VUE CRÉATEUR (ADMIN) ==================== -->
+        <section id="creatorView" class="hidden space-y-8">
+            <!-- Header Hero & Anti-Spoil Banner -->
+            <div class="bg-gradient-to-r from-purple-900 via-fuchsia-900 to-pink-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl">🎁</div>
+                <div class="relative z-10 max-w-2xl space-y-4">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white/90 text-xs font-medium backdrop-blur-sm">
+                        <i class="fa-solid fa-crown text-amber-300"></i> Espace Créateur Sécurisé
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Compose ta liste de souhaits</h2>
+                    <p class="text-slate-200 text-sm leading-relaxed">
+                        Ajoute les cadeaux de tes rêves avec leur prix, photo et lien d'achat. 
+                    </p>
+
+                    <!-- Anti Spoil Notice -->
+                    <div class="bg-white/10 border border-white/20 rounded-2xl p-4 flex items-start gap-3 backdrop-blur-sm">
+                        <div class="p-2 rounded-xl bg-pink-500/20 text-pink-300 text-base mt-0.5">
+                            <i class="fa-solid fa-eye-slash"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-semibold text-pink-200">Protection Anti-Spoil Activée 🛡️</h4>
+                            <p class="text-xs text-slate-200 mt-0.5">
+                                Conformément à ta consigne, tu n'as <strong>aucun accès</strong> aux réservations de tes invités depuis cet écran. La surprise du grand jour reste intacte à 100% !
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Invitation Link Share Box -->
+                    <div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <div class="flex-1 bg-black/30 border border-white/20 rounded-2xl px-4 py-2.5 flex items-center justify-between text-xs backdrop-blur-sm">
+                            <span class="text-slate-300 truncate font-mono" id="guestShareUrlDisplay">https://...</span>
+                            <button onclick="copyGuestLink()" class="ml-2 px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-white font-semibold flex items-center gap-1.5 transition-colors">
+                                <i class="fa-solid fa-copy"></i> Copier
+                            </button>
+                        </div>
+                        <a id="testGuestLink" href="#" target="_blank" class="px-5 py-2.5 bg-gradient-to-r from-pink-500 to-fuchsia-600 hover:from-pink-600 hover:to-fuchsia-700 text-white font-semibold rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg transition-all">
+                            <span>Tester comme invité</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Bar: Add Button & Stats -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900">Mes Cadeaux Souhaités</h3>
+                    <p class="text-xs text-slate-600" id="creatorGiftCounter">0 cadeau dans la liste</p>
+                </div>
+                <button onclick="openGiftModal()" class="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white font-semibold text-sm rounded-2xl shadow-lg shadow-fuchsia-500/25 flex items-center justify-center gap-2 transition-transform transform active:scale-95">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Ajouter un cadeau</span>
+                </button>
+            </div>
+
+            <!-- Gifts Grid (Creator View) -->
+            <div id="creatorGiftsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamic cards injected via JS -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="creatorEmptyState" class="hidden text-center py-16 px-4">
+                <div class="w-20 h-20 mx-auto rounded-3xl bg-pink-100 flex items-center justify-center text-4xl mb-4">
+                    🎁
+                </div>
+                <h4 class="text-lg font-bold text-slate-800">Ta liste est encore vide !</h4>
+                <p class="text-xs text-slate-600 max-w-sm mx-auto mt-1 mb-6">
+                    Commence par ajouter le premier cadeau que tu aimerais recevoir pour que tes proches puissent le réserver.
+                </p>
+                <button onclick="openGiftModal()" class="px-6 py-3 bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-semibold text-sm rounded-2xl shadow-md">
+                    + Ajouter mon premier cadeau
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ==================== VUE INVITÉ (PUBLIC SANS SPOIL) ==================== -->
+        <section id="guestView" class="hidden space-y-8">
+            <!-- Header Hero Invité -->
+            <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+                <div class="absolute -right-8 -bottom-8 opacity-10 text-9xl">🎁</div>
+                <div class="relative z-10 max-w-2xl space-y-3">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/30 text-indigo-200 text-xs font-medium">
+                        ✨ Liste officielle des invités
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Fais plaisir sans doublon !</h2>
+                    <p class="text-slate-300 text-sm leading-relaxed">
+                        Choisis un cadeau parmi les souhaits ci-dessous et réserve-le à ton nom. 
+                        <strong>Le créateur ne saura rien</strong> afin de garder la surprise intacte jusqu'au déballage !
+                    </p>
+                    <div class="flex flex-wrap gap-4 pt-2 text-xs text-slate-300">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+                            <span>Disponible à la réservation</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+                            <span>Déjà réservé par un proche</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats & Filtering -->
+            <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900">La Liste des Souhaits</h3>
+                    <p class="text-xs text-slate-600" id="guestGiftCounter">Chargement des souhaits...</p>
+                </div>
+                <!-- Filter Buttons -->
+                <div class="flex items-center gap-1 bg-slate-200/70 p-1 rounded-2xl text-xs font-medium">
+                    <button onclick="setFilter('all')" id="filterAll" class="px-3 py-1.5 rounded-xl bg-white text-slate-800 shadow-sm transition-all">Tous</button>
+                    <button onclick="setFilter('available')" id="filterAvail" class="px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition-all">Disponibles</button>
+                    <button onclick="setFilter('reserved')" id="filterRes" class="px-3 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 transition-all">Réservés</button>
+                </div>
+            </div>
+
+            <!-- Gifts Grid (Guest View) -->
+            <div id="guestGiftsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- Empty State Guest -->
+            <div id="guestEmptyState" class="hidden text-center py-16 px-4">
+                <div class="w-20 h-20 mx-auto rounded-3xl bg-indigo-100 flex items-center justify-center text-4xl mb-4">
+                    🎁
+                </div>
+                <h4 class="text-lg font-bold text-slate-800">Aucun cadeau à afficher pour le moment</h4>
+                <p class="text-xs text-slate-600 max-w-sm mx-auto mt-1">
+                    La liste est en cours de création ou le filtre sélectionné ne contient aucun élément.
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================== MODAL: CONNEXION CRÉATEUR (CODE ADMIN123) ==================== -->
+    <div id="loginModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6 transform transition-all">
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 bg-fuchsia-100 text-fuchsia-600 rounded-2xl flex items-center justify-center mx-auto text-2xl">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900">Accès Créateur</h3>
+                <p class="text-xs text-slate-500">
+                    Saisis le mot de passe secret pour gérer ta liste de cadeaux.
+                </p>
+            </div>
+
+            <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Mot de passe</label>
+                    <input type="password" id="adminPasswordInput" placeholder="Entrez le mot de passe..." class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-fuchsia-500 focus:outline-none transition-all" required autofocus>
+                    <p id="loginErrorMsg" class="text-xs text-rose-500 font-semibold mt-1 hidden">Mot de passe incorrect !</p>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeLoginModal()" class="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold text-xs rounded-2xl hover:bg-slate-50 transition-colors">
+                        Annuler
+                    </button>
+                    <button type="submit" class="flex-1 py-3 bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white font-semibold text-xs rounded-2xl shadow-lg shadow-fuchsia-500/25 hover:from-fuchsia-700 hover:to-pink-700 transition-all">
+                        Valider l'accès
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ==================== MODAL: AJOUTER / MODIFIER CADEAU ==================== -->
+    <div id="giftModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="text-xl font-bold text-slate-900 flex items-center gap-2" id="modalGiftTitle">
+                    <i class="fa-solid fa-gift text-fuchsia-600"></i> Ajouter un cadeau
+                </h3>
+                <button onclick="closeGiftModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleSaveGift(event)" class="space-y-4">
+                <input type="hidden" id="giftEditId">
+
+                <!-- Nom du cadeau -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nom du cadeau *</label>
+                    <input type="text" id="giftName" placeholder="Ex: Console PS5, Livre de cuisine, Montre..." class="w-full px-4 py-2.5 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-fuchsia-500 focus:outline-none" required>
+                </div>
+
+                <!-- Prix & Devise -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Prix (€ approximatif)</label>
+                        <input type="number" step="0.01" id="giftPrice" placeholder="Ex: 49.99" class="w-full px-4 py-2.5 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-fuchsia-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Catégorie / Note</label>
+                        <input type="text" id="giftCategory" placeholder="Ex: High-tech, Mode, Déco..." class="w-full px-4 py-2.5 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-fuchsia-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Lien d'achat -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Lien d'achat (URL)</label>
+                    <input type="url" id="giftUrl" placeholder="https://www.amazon.fr/... ou fnac, etc." class="w-full px-4 py-2.5 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-fuchsia-500 focus:outline-none">
+                </div>
+
+                <!-- Image URL -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Lien de la photo (URL de l'image)</label>
+                    <input type="url" id="giftImage" placeholder="https://images.unsplash.com/... ou lien direct .jpg/.png" class="w-full px-4 py-2.5 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-fuchsia-500 focus:outline-none" oninput="previewImage(this.value)">
+                    <p class="text-[11px] text-slate-600 mt-1">Si laissé vide, une jolie image par défaut sera assignée.</p>
+                </div>
+
+                <!-- Image Preview -->
+                <div id="imagePreviewContainer" class="hidden rounded-2xl overflow-hidden border border-slate-200 h-36 bg-slate-100 flex items-center justify-center">
+                    <img id="imagePreview" src="" alt="Aperçu" class="w-full h-full object-cover">
+                </div>
+
+                <!-- Boutons -->
+                <div class="flex gap-3 pt-3">
+                    <button type="button" onclick="closeGiftModal()" class="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold text-xs rounded-2xl hover:bg-slate-50 transition-colors">
+                        Annuler
+                    </button>
+                    <button type="submit" class="flex-1 py-3 bg-gradient-to-r from-fuchsia-600 to-pink-600 text-white font-semibold text-xs rounded-2xl shadow-lg shadow-fuchsia-500/25 hover:from-fuchsia-700 hover:to-pink-700 transition-all">
+                        Enregistrer le cadeau
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ==================== MODAL: RÉSERVER UN CADEAU (INVITÉ) ==================== -->
+    <div id="reserveModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-2xl">
+                    <i class="fa-solid fa-gift"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900">Réserver ce cadeau</h3>
+                <p class="text-xs text-slate-500" id="reserveModalGiftName">...</p>
+            </div>
+
+            <form onsubmit="handleConfirmReservation(event)" class="space-y-4">
+                <input type="hidden" id="reserveGiftId">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Ton Prénom / Nom *</label>
+                    <input type="text" id="reserverNameInput" placeholder="Ex: Thomas, Marie, Oncle Bob..." class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" required autofocus>
+                    <p class="text-[11px] text-slate-600 mt-1">Ton nom sera visible uniquement par les autres invités pour éviter les doublons.</p>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="closeReserveModal()" class="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold text-xs rounded-2xl hover:bg-slate-50">
+                        Annuler
+                    </button>
+                    <button type="submit" class="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold text-xs rounded-2xl shadow-lg shadow-indigo-500/25 hover:from-indigo-700 hover:to-purple-700">
+                        Confirmer la réservation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ==================== TOAST NOTIFICATION ==================== -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-xs font-medium">
+        <span id="toastIcon">✨</span>
+        <span id="toastMsg">Notification</span>
+    </div>
+
+    <!-- Scripts Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
