@@ -5,10 +5,17 @@
 
 const STORAGE_LISTS = "tds_lists_v3";
 const STORAGE_HISTORY = "tds_history_v3";
-const AUTH_PREFIX = "tds_auth_";
+const STORAGE_DEVICE_ID = "tds_device_id_v1";
 
-// Image élégante neutre par défaut
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?auto=format&fit=crop&w=600&q=80";
+// Identifiant unique de cet appareil (téléphone, ordi, etc.)
+function getDeviceId() {
+    let devId = localStorage.getItem(STORAGE_DEVICE_ID);
+    if (!devId) {
+        devId = "dev_" + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+        localStorage.setItem(STORAGE_DEVICE_ID, devId);
+    }
+    return devId;
+}
 
 // Données d'exemple initiales
 const SEED_LISTS = {
@@ -474,9 +481,13 @@ function renderGuestView() {
                                 <span class="font-semibold block">Réservé par ${escapeHtml(gift.reservedBy)}</span>
                                 <span class="text-[11px] text-amber-700/80">Pour éviter les doublons</span>
                             </div>
-                            <button onclick="cancelReservation('${gift.id}')" class="text-[11px] px-2 py-1 rounded-lg bg-white border border-amber-200 text-amber-900 font-semibold hover:bg-amber-100 transition-colors">
-                                Annuler
-                            </button>
+                            ${gift.reservedByDeviceId === getDeviceId() ? `
+                                <button onclick="cancelReservation('${gift.id}')" class="text-[11px] px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-900 font-semibold hover:bg-amber-100 transition-colors shadow-xs" title="Annuler ma réservation">
+                                    Annuler ma réservation
+                                </button>
+                            ` : `
+                                <span class="text-[10px] text-stone-400 font-medium">Verrouillé</span>
+                            `}
                         </div>
                     ` : `
                         <span>Ce cadeau est libre pour vous !</span>
@@ -828,6 +839,7 @@ function handleConfirmReserve(event) {
     if (gift) {
         gift.reservedBy = name;
         gift.reservedAt = new Date().toISOString();
+        gift.reservedByDeviceId = getDeviceId(); // Lié à l'appareil de la personne
         lists[currentList.slug] = currentList;
         saveLists();
         closeModal("modalReserve");
@@ -841,13 +853,20 @@ function cancelReservation(id) {
     const gift = (currentList.gifts || []).find(g => g.id === id);
     if (!gift) return;
 
-    if (confirm(`Annuler la réservation pour "${gift.name}" ?`)) {
+    // Sécurité stricte : seul le détenteur de l'appareil ayant réservé peut annuler
+    if (gift.reservedByDeviceId && gift.reservedByDeviceId !== getDeviceId()) {
+        alert("Vous ne pouvez pas annuler la réservation d'un autre invité ! Seule la personne ayant réservé ce cadeau depuis son appareil peut le libérer.");
+        return;
+    }
+
+    if (confirm(`Annuler votre réservation pour "${gift.name}" ? Le cadeau redeviendra libre pour les autres invités.`)) {
         gift.reservedBy = null;
         gift.reservedAt = null;
+        gift.reservedByDeviceId = null;
         lists[currentList.slug] = currentList;
         saveLists();
         renderGuestView();
-        showToast("Réservation annulée.");
+        showToast("Votre réservation a été annulée. Le cadeau est libre.");
     }
 }
 
